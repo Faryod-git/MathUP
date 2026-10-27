@@ -1,0 +1,15 @@
+node_modules/
+data/
+backups/
+logs/
+config.json
+secrets.dpapi
+questions.json
+.env
+.env.*
+*.sqlite*
+*.db*
+*.log
+*.zip
+*.pem
+*.key

@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "local_admin": "implemented_and_http_tested",
+  "bot_registration": "implemented_mock_tested",
+  "test_1_test_2_in_new_bot": "absent",
+  "chatplace_original_automations": "unchanged",
+  "synthetic_checks_passed_linux": 64,
+  "live_telegram_messages_sent_this_build": 0,
+  "live_credentials_used_this_build": false,
+  "windows_dpapi_test": "included_in_windows_ci_not_run_in_linux",
+  "production_bot_migration": "not_performed",
+  "windows_installation": "pending_user_computer_connection_and_setup",
+  "cloudflare_worker_and_d1": "unchanged",
+  "real_personal_data_import": "not_performed",
+  "blockers": [
+    "Run Setup.ps1 on the user's Windows computer to set a private password and optional bot token",
+    "Configure the user's own numeric Telegram ID before testing",
+    "An active ChatPlace webhook prevents long polling; no automatic change is allowed",
+    "Remote Telegram admin needs separate secured HTTPS setup; current admin is loopback only"
+  ]
+}
