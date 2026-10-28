@@ -1,12 +1,12 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.0",
   "local_admin": "implemented_and_http_tested",
   "bot_registration": "implemented_mock_tested",
   "test_1_test_2_in_new_bot": "absent",
   "chatplace_original_automations": "unchanged",
-  "synthetic_checks_passed_linux": 82,
-  "synthetic_checks_passed_windows": 83,
-  "ci_result": "pending_for_version_1.1.1",
+  "synthetic_checks_passed_linux": 86,
+  "synthetic_checks_passed_windows": 87,
+  "ci_result": "pending_for_version_1.2.0",
   "demo_process_startup_login_roster": "passed",
   "live_telegram_messages_sent_this_build": 0,
   "live_credentials_used_this_build": false,
@@ -25,5 +25,9 @@
   "student_based_recipient_selection": true,
   "deduplicated_parent_delivery": true,
   "parent_bot_buttons": true,
-  "registration_button_hidden_after_signup": true
+  "registration_button_hidden_after_signup": true,
+  "separate_message_consent_step": false,
+  "stop_button_visible": false,
+  "single_signup_notice_includes_course_messages": true,
+  "existing_opt_outs_preserved": true
 }

@@ -16,13 +16,29 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
     let seq=0;
     const queue=(method,body)=>run('INSERT INTO bot_outbox(update_id,seq,body_json) VALUES(?,?,?)',update.update_id,seq++,JSON.stringify({method,body}));
     const registered=()=>!!query('SELECT id FROM parents WHERE telegram_chat_id=? AND chat_verified=1 AND archived=0',chat);
-    const homeKeyboard=()=>({keyboard:[[{text:registered()?'Farzand qo‘shish':'Ro‘yxatdan o‘tish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'},{text:'Xabarlarni to‘xtatish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true});
+    const homeKeyboard=()=>({keyboard:[[{text:registered()?'Farzand qo‘shish':'Ro‘yxatdan o‘tish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true});
     const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:markup||(rows?{inline_keyboard:rows}:homeKeyboard())});
     const session=()=>query('SELECT * FROM bot_sessions WHERE chat_id=?',chat);
     const clear=()=>run('DELETE FROM bot_sessions WHERE chat_id=?',chat);
     const save=(stage,data)=>run('INSERT INTO bot_sessions(chat_id,stage,data_json,expires) VALUES(?,?,?,?) ON CONFLICT(chat_id) DO UPDATE SET stage=excluded.stage,data_json=excluded.data_json,expires=excluded.expires',chat,stage,JSON.stringify(data),clock()+1800);
     const choice=(label,key,nonce)=>({text:label,callback_data:key+':'+nonce});
     const menu=()=>say('MathUP. Kerakli amalni quyidagi menyu tugmalaridan tanlang.');
+    const finishRegistration=(data,requestedConsent,preserveOptOut=false)=>{
+            const recent=query('SELECT COUNT(*) n FROM mathup_registrations WHERE telegram_id=? AND created_at>?',chat,clock()-86400).n;
+            const old=query('SELECT * FROM parents WHERE telegram_chat_id=?',chat);
+            if(recent>=5)say('Bugungi ro‘yxat limiti tugadi. Ertaga yoki ma’muriyat orqali qo‘shing.');
+            else if(old?.archived)say('Ma’muriyatga murojaat qiling.');
+            else {
+              const consent=preserveOptOut&&old&&old.consent===0?0:(requestedConsent?1:0),t=new Date(clock()*1000).toISOString();
+              if(old)run('UPDATE parents SET display_name=?,phone=?,telegram_username=?,chat_verified=1,consent=?,version=version+1,updated_at=? WHERE id=?',data.name,data.phone,String(from.username||'').slice(0,64),consent,t,old.id);
+              else run('INSERT INTO parents(identity_key,display_name,phone,telegram_chat_id,telegram_username,chat_verified,consent,created_at,updated_at) VALUES(?,?,?,?,?,1,?,?,?)','telegram:'+chat,data.name,data.phone,chat,String(from.username||'').slice(0,64),consent,t,t);
+              const parent=query('SELECT id FROM parents WHERE telegram_chat_id=?',chat);
+              run("INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,'pending_current',?,?) ON CONFLICT(parent_id,full_name) DO NOTHING",parent.id,data.child,data.grade,t,t);
+              run('INSERT INTO mathup_registrations(id,telegram_id,parent_id,created_at) VALUES(?,?,?,?)','bot:'+update.update_id,chat,parent.id,clock());
+              say('Ma’lumotlar saqlandi. O‘qish holatini ma’muriyat tasdiqlaydi. Yana farzand qo‘shish uchun menyudagi Farzand qo‘shish tugmasidan foydalaning.');
+            }
+      clear();
+    };
     db.exec('BEGIN IMMEDIATE');
     try {
       if(query('SELECT update_id FROM bot_updates WHERE update_id=?',update.update_id)){db.exec('ROLLBACK');return false;}
@@ -59,7 +75,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
         clear();
         if(!config.publicRegistrationEnabled)say('Ro‘yxatdan o‘tish hozir yoqilmagan. Ma’muriyatga murojaat qiling.');
         else if(query('SELECT id FROM parents WHERE telegram_chat_id=? AND archived=1',chat))say('Ma’muriyatga murojaat qiling.');
-        else {const nonce=randomBytes(8).toString('hex');save('consent',{nonce});say('Siz ota-ona yoki qonuniy vakil sifatida o‘zingiz va farzandingizning ism-familiyasi, telefon raqami, sinfi va Telegram akkauntingizni o‘quv markazi bazasida saqlashga rozimisiz? Xabarlar uchun rozilik keyin alohida so‘raladi. /cancel bilan bekor qilishingiz mumkin.',[[choice('Roziman','consent-yes',nonce),choice('Bekor qilish','consent-no',nonce)]]);}
+        else {const nonce=randomBytes(8).toString('hex');save('consent',{nonce,noticeVersion:2});say('Ro‘yxatdan o‘tishda o‘zingiz va farzandingizning ism-familiyasi, telefon raqami, sinfi va Telegram akkauntingiz o‘quv markazi bazasida saqlanadi. Ushbu bot orqali o‘quv markazining xabarlari ham yuboriladi. Ota-ona yoki qonuniy vakil sifatida bunga rozimisiz? Bekor qilish mumkin.',[[choice('Roziman','consent-yes',nonce),choice('Bekor qilish','consent-no',nonce)]]);}
       }
       else if(command==='/start'||command==='/help') {clear();menu();}
       else {
@@ -74,19 +90,19 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
               WHERE id=? AND version=? AND archived=0 AND (telegram_chat_id IS NULL OR telegram_chat_id='')
               AND NOT EXISTS(SELECT 1 FROM parents WHERE telegram_chat_id=?)
               AND EXISTS(SELECT 1 FROM mathup_link_tokens WHERE hash=? AND parent_id=? AND used=0 AND expires>?)`,chat,String(from.username||'').slice(0,64),t,data.parentId,data.parentVersion,chat,data.hash,data.parentId,clock());
-            if(r.changes){run('UPDATE mathup_link_tokens SET used=1 WHERE hash=?',data.hash);say('Telegram akkauntingiz bog‘landi. Xabarlar roziligini /stop orqali bekor qilishingiz mumkin.');}
+            if(r.changes){run('UPDATE mathup_link_tokens SET used=1 WHERE hash=?',data.hash);say('Telegram akkauntingiz bog‘landi.');}
             else say('Bog‘lash kodi eskirgan yoki yozuv o‘zgargan. Ma’muriyatdan yangi havola oling.');
             clear();
           }else say('Joriy tasdiqlash tugmasidan foydalaning yoki /cancel yuboring.');
         }
         else if(s.stage==='consent') {
           if(matches('consent-no')){clear();say('Ro‘yxatdan o‘tish bekor qilindi.');}
-          else if(matches('consent-yes')){save('parent',{});say('Ota-onaning ism-familiyasini kiriting (120 belgigacha).');}
+          else if(matches('consent-yes')){save('parent',{messageNoticeAccepted:data.noticeVersion===2});say('Ota-onaning ism-familiyasini kiriting (120 belgigacha).');}
           else say('Joriy rozilik tugmasini bosing yoki /cancel yuboring.');
         }
         else if(callback&&!['messages','grade'].includes(s.stage))say('Bu tugma eskirgan. Joriy savolga javob yozing.');
         else if(s.stage==='parent') {
-          const name=clean(text);if(!name)say('Ism-familiyani 1–120 belgi bilan kiriting.');else {save('phone',{name});say('Telefon raqamingizni tugma orqali ulashing yoki +998 va 9 ta raqamni yozing.',null,{keyboard:[[{text:'Telefon raqamimni ulashish',request_contact:true}],[{text:'Bekor qilish'}]],resize_keyboard:true,one_time_keyboard:true});}
+          const name=clean(text);if(!name)say('Ism-familiyani 1–120 belgi bilan kiriting.');else {save('phone',{...data,name});say('Telefon raqamingizni tugma orqali ulashing yoki +998 va 9 ta raqamni yozing.',null,{keyboard:[[{text:'Telefon raqamimni ulashish',request_contact:true}],[{text:'Bekor qilish'}]],resize_keyboard:true,one_time_keyboard:true});}
         }
         else if(s.stage==='phone') {
           const ownContact=m.contact&&String(m.contact.user_id)===chat;const supplied=m.contact?(ownContact?String(m.contact.phone_number).replace(/^\+?/,'+'):''):text;const phone=validPhone(supplied);if(!phone)say('Telefon formati: +998 va 9 ta raqam.');else {save('child',{...data,phone});say('Farzandingizning ism-familiyasini kiriting (120 belgigacha).');}
@@ -97,25 +113,14 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
         else if(s.stage==='grade') {
           const picked=/^grade_([a-f0-9]{16})_([1-9]|10|11)$/.exec(action);const value=callback?(picked&&picked[1]===data.nonce?picked[2]:''):text;
           if(!/^(?:[1-9]|10|11)$/.test(value))say('Sinfni 1–11 oralig‘ida kiriting.');
-          else {const nonce=randomBytes(8).toString('hex');save('messages',{...data,grade:Number(value),nonce});say('O‘quv markazining Telegram xabarlarini olishga rozimisiz? Rad etsangiz ham ro‘yxatga olinasiz. /stop orqali rozilikni keyin bekor qilishingiz mumkin.',[[choice('Xabarlarni olaman','messages-yes',nonce),choice('Hozircha yo‘q','messages-no',nonce)]]);}
+          else if(data.messageNoticeAccepted!==true){clear();say('Ro‘yxat shakli yangilandi. Menyudan qayta boshlang.');}
+          else finishRegistration({...data,grade:Number(value)},true,true);
         }
         else if(s.stage==='messages') {
           if(!matches('messages-yes')&&!matches('messages-no'))say('Joriy xabarlar roziligi tugmasini bosing.');
           else {
-            const recent=query('SELECT COUNT(*) n FROM mathup_registrations WHERE telegram_id=? AND created_at>?',chat,clock()-86400).n;
-            const old=query('SELECT * FROM parents WHERE telegram_chat_id=?',chat);
-            if(recent>=5)say('Bugungi ro‘yxat limiti tugadi. Ertaga yoki ma’muriyat orqali qo‘shing.');
-            else if(old?.archived)say('Ma’muriyatga murojaat qiling.');
-            else {
-              const consent=matches('messages-yes')?1:0,t=new Date(clock()*1000).toISOString();
-              if(old)run('UPDATE parents SET display_name=?,phone=?,telegram_username=?,chat_verified=1,consent=?,version=version+1,updated_at=? WHERE id=?',data.name,data.phone,String(from.username||'').slice(0,64),consent,t,old.id);
-              else run('INSERT INTO parents(identity_key,display_name,phone,telegram_chat_id,telegram_username,chat_verified,consent,created_at,updated_at) VALUES(?,?,?,?,?,1,?,?,?)','telegram:'+chat,data.name,data.phone,chat,String(from.username||'').slice(0,64),consent,t,t);
-              const parent=query('SELECT id FROM parents WHERE telegram_chat_id=?',chat);
-              run("INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,'pending_current',?,?) ON CONFLICT(parent_id,full_name) DO NOTHING",parent.id,data.child,data.grade,t,t);
-              run('INSERT INTO mathup_registrations(id,telegram_id,parent_id,created_at) VALUES(?,?,?,?)','bot:'+update.update_id,chat,parent.id,clock());
-              say('Ma’lumotlar saqlandi. O‘qish holatini ma’muriyat tasdiqlaydi. Yana farzand qo‘shish uchun /register. Xabarlar roziligini bekor qilish: /stop.');
-            }
-            clear();
+            finishRegistration(data,matches('messages-yes'));
+
           }
         }
       }

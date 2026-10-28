@@ -82,7 +82,7 @@ Avval adminni sinang va oynasida Ctrl+C bosing.
 4. `Start.ps1 -Bot` ni ishga tushiring. `/bot-status` sahifasida `mode: "polling"`
    bo‘lsa bot so‘rovlarni olyapti. `blocked` holatida `reason` sababini ko‘ring.
 5. Faqat o‘z akkauntingizdan `/register` yuboring: ma’lumot saqlash roziligi →
-   ota-ona ismi → telefon → farzand ismi → sinf 1–11 → alohida xabarlar roziligi.
+   ota-ona ismi → telefon → farzand ismi → sinf 1–11 → yagona ro‘yxat tasdig‘i.
    Dasturda test qilganda haqiqiy oila o‘rniga sun’iy ma’lumot kiriting.
 6. Adminni yangilang: ota-ona/o‘quvchi `Tasdiqlash kutilmoqda` holatida ko‘rinadi.
    Holatni ma’muriyat tasdiqlaydi. Bir ota-ona yana `/register` bilan farzand qo‘sha oladi.
@@ -164,3 +164,7 @@ Yangilash: serverni Ctrl+C bilan to‘xtating. Yangi paketdagi Apply-Update.ps1 
 ### 1.1.1
 
 Ro‘yxatdan o‘tish tugmasi faqat hali ro‘yxatdan o‘tmagan akkauntga ko‘rinadi. Ro‘yxat tugagandan keyingi javobda ham, qayta /start yuborilganda ham Farzand qo‘shish tugmasi chiqadi. Xabarlar roziligini bekor qilish ro‘yxatdan chiqqanlik hisoblanmaydi. Eski klaviaturani yangilash uchun botga /start yuboring.
+
+### 1.2.0 — qisqaroq ro‘yxatdan o‘tish
+
+Sinf tanlangach ro‘yxat saqlanadi. Xabarlar uchun alohida savol va xabarlarni to‘xtatish tugmasi menyuda yo‘q. Boshidagi yagona tasdiq ma’lumotlar saqlanishi va o‘quv markazi xabarlari haqida aytadi. Avval xabarlarni rad etgan ota-onaning holati farzand qo‘shilganda avtomatik o‘zgarmaydi. Eski ochiq tasdiqlash oynalari va qo‘lda /stop buyrug‘i moslik uchun ishlashda davom etadi.

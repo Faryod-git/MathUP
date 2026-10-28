@@ -92,7 +92,7 @@ try {
     const text=(value,options)=>engine(update(value,options));
     const state=()=>DB.sqlite.prepare('SELECT * FROM bot_sessions WHERE chat_id=?').get(chat);
     const choose=prefix=>text('',{action:prefix+':'+JSON.parse(state().data_json).nonce});
-    const register=(name='SYNTHETIC REGISTERED CHILD',consent='messages-yes')=>{text('/register');choose('consent-yes');text('SYNTHETIC PARENT');text('+998000000002');text(name);text('7');choose(consent);};
+    const register=(name='SYNTHETIC REGISTERED CHILD')=>{text('/register');choose('consent-yes');text('SYNTHETIC PARENT');text('+998000000002');text(name);text('7');};
     await test('Bot ignores groups and non-admin accounts in first-test mode',()=>{
       const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n;text('/register',{id:'910000000099'});text('/register',{type:'group'});assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n,n);
     });
@@ -103,24 +103,24 @@ try {
       text('/register');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('PRIVATE'));text('UNCONSENTED NAME');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('UNCONSENTED'));choose('consent-yes');assert.equal(state().stage,'parent');
     });
     await test('Bot validates phone and grade; stale callbacks cannot move a conversation',()=>{
-      text('SYNTHETIC PARENT');text('bad phone');assert.equal(state().stage,'phone');text('+998000000002');text('SYNTHETIC REGISTERED CHILD');text('12');assert.equal(state().stage,'grade');text('7');assert.equal(state().stage,'messages');text('',{action:'messages-yes:stale'});assert.equal(state().stage,'messages');
+      text('SYNTHETIC PARENT');text('bad phone');assert.equal(state().stage,'phone');text('+998000000002');text('SYNTHETIC REGISTERED CHILD');text('12');assert.equal(state().stage,'grade');text('',{action:'grade_0000000000000000_7'});assert.equal(state().stage,'grade');text('7');assert.equal(state(),undefined);
     });
     await test('Consent creates verified parent and pending student atomically',()=>{
-      choose('messages-yes');assert.equal(state(),undefined);const p=DB.sqlite.prepare('SELECT * FROM parents WHERE telegram_chat_id=?').get(chat);assert.equal(p.chat_verified,1);assert.equal(p.consent,1);const s=DB.sqlite.prepare('SELECT * FROM students WHERE parent_id=?').get(p.id);assert.equal(s.grade,7);assert.equal(s.status,'pending_current');
+      assert.equal(state(),undefined);const p=DB.sqlite.prepare('SELECT * FROM parents WHERE telegram_chat_id=?').get(chat);assert.equal(p.chat_verified,1);assert.equal(p.consent,1);const s=DB.sqlite.prepare('SELECT * FROM students WHERE parent_id=?').get(p.id);assert.equal(s.grade,7);assert.equal(s.status,'pending_current');
     });
     await test('Duplicate Telegram update adds no rows or replies',()=>{
       const u=update('/start');assert.equal(engine(u),true);const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n;assert.equal(engine(u),false);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n,n);
     });
     await test('Second child reuses same parent; duplicate name creates no extra child',()=>{
-      const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n;register('SYNTHETIC SECOND CHILD','messages-no');register('SYNTHETIC SECOND CHILD','messages-no');assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n,n);const p=DB.sqlite.prepare('SELECT * FROM parents WHERE telegram_chat_id=?').get(chat);assert.equal(p.consent,0);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students WHERE parent_id=?').get(p.id).n,2);
+      const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n;register('SYNTHETIC SECOND CHILD');register('SYNTHETIC SECOND CHILD');assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n,n);const p=DB.sqlite.prepare('SELECT * FROM parents WHERE telegram_chat_id=?').get(chat);assert.equal(p.consent,1);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students WHERE parent_id=?').get(p.id).n,2);
     });
     await test('Cancel deletes a partial registration; sessions expire',()=>{
       text('/register');choose('consent-yes');text('SYNTHETIC CANCELLED');text('/cancel');assert.equal(state(),undefined);text('/register');DB.sqlite.prepare('UPDATE bot_sessions SET expires=1').run();text('EXPIRED');assert.equal(state(),undefined);
     });
     await test('Failure during child insert rolls back parent, update and outbox',()=>{
-      text('/register');choose('consent-yes');text('ROLLBACK NAME');text('+998000000003');text('ROLLBACK CHILD');text('3');
+      text('/register');choose('consent-yes');text('ROLLBACK NAME');text('+998000000003');text('ROLLBACK CHILD');
       DB.sqlite.exec("CREATE TRIGGER synthetic_failure BEFORE INSERT ON students BEGIN SELECT RAISE(ABORT,'synthetic failure'); END;");
-      const u=update('',{action:'messages-yes:'+JSON.parse(state().data_json).nonce});const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n;
+      const u=update('3');const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n;
       assert.throws(()=>engine(u));assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n,n);assert.equal(DB.sqlite.prepare('SELECT * FROM bot_updates WHERE update_id=?').get(u.update_id),undefined);assert.notEqual(DB.sqlite.prepare('SELECT display_name FROM parents WHERE telegram_chat_id=?').get(chat).display_name,'ROLLBACK NAME');DB.sqlite.exec('DROP TRIGGER synthetic_failure');text('/cancel');
     });
     await test('Daily registration limit stops the sixth accepted request',()=>{
