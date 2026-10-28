@@ -160,3 +160,7 @@ Botda ro‘yxatdan o‘tish, farzand qo‘shish, mening farzandlarim, bosh menyu
 Xabar uchun ota-ona o‘rniga o‘quvchilar qatoridagi kataklarni belgilang. Bir yuborishda 100 tagacha o‘quvchi va 20 tagacha ota-ona. Bir oilaning bir nechta farzandi tanlansa ham xabar bir marta boradi. Oldindan ko‘rishdan keyin o‘quvchi yozuvi o‘zgarsa, qabul qiluvchilarni qayta tekshirish kerak.
 
 Yangilash: serverni Ctrl+C bilan to‘xtating. Yangi paketdagi Apply-Update.ps1 ni -Target eski loyiha papkasi bilan ishga tushiring. U faqat kod fayllarini zaxiralab almashtiradi; config.json, secrets.dpapi va data/ ko‘chirilmaydi. Keyin Start.ps1 -Bot va brauzerda Ctrl+F5. Eski bot xabarlaridagi sinf tugmalari eskirishi mumkin; Bosh menyu yoki /start bilan qayta boshlang.
+
+### 1.1.1
+
+Ro‘yxatdan o‘tish tugmasi faqat hali ro‘yxatdan o‘tmagan akkauntga ko‘rinadi. Ro‘yxat tugagandan keyingi javobda ham, qayta /start yuborilganda ham Farzand qo‘shish tugmasi chiqadi. Xabarlar roziligini bekor qilish ro‘yxatdan chiqqanlik hisoblanmaydi. Eski klaviaturani yangilash uchun botga /start yuboring.

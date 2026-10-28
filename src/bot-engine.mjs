@@ -15,13 +15,14 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
     if(config.audience!=='all'&&!config.adminTelegramIds.map(String).includes(chat))return false;
     let seq=0;
     const queue=(method,body)=>run('INSERT INTO bot_outbox(update_id,seq,body_json) VALUES(?,?,?)',update.update_id,seq++,JSON.stringify({method,body}));
-    const homeKeyboard={keyboard:[[{text:'Ro‘yxatdan o‘tish'},{text:'Farzand qo‘shish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'},{text:'Xabarlarni to‘xtatish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true};
-    const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:markup||(rows?{inline_keyboard:rows}:homeKeyboard)});
+    const registered=()=>!!query('SELECT id FROM parents WHERE telegram_chat_id=? AND chat_verified=1 AND archived=0',chat);
+    const homeKeyboard=()=>({keyboard:[[{text:registered()?'Farzand qo‘shish':'Ro‘yxatdan o‘tish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'},{text:'Xabarlarni to‘xtatish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true});
+    const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:markup||(rows?{inline_keyboard:rows}:homeKeyboard())});
     const session=()=>query('SELECT * FROM bot_sessions WHERE chat_id=?',chat);
     const clear=()=>run('DELETE FROM bot_sessions WHERE chat_id=?',chat);
     const save=(stage,data)=>run('INSERT INTO bot_sessions(chat_id,stage,data_json,expires) VALUES(?,?,?,?) ON CONFLICT(chat_id) DO UPDATE SET stage=excluded.stage,data_json=excluded.data_json,expires=excluded.expires',chat,stage,JSON.stringify(data),clock()+1800);
     const choice=(label,key,nonce)=>({text:label,callback_data:key+':'+nonce});
-    const menu=()=>say('MathUP. Quyidagi tugmalar orqali ro‘yxatdan o‘ting, farzand qo‘shing yoki ma’lumotlaringizni ko‘ring.',[[{text:'Ro‘yxatdan o‘tish / farzand qo‘shish',callback_data:'register'}],[{text:'Mening farzandlarim',callback_data:'children'}],[{text:'Bekor qilish',callback_data:'cancel'}]]);
+    const menu=()=>say('MathUP. Kerakli amalni quyidagi menyu tugmalaridan tanlang.');
     db.exec('BEGIN IMMEDIATE');
     try {
       if(query('SELECT update_id FROM bot_updates WHERE update_id=?',update.update_id)){db.exec('ROLLBACK');return false;}
