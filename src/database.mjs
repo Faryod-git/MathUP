@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
+import {ensureAudience} from './local-data.mjs';
 
 export function openDatabase(path=':memory:') {
   const sqlite = new DatabaseSync(path);
@@ -18,6 +19,7 @@ export function openDatabase(path=':memory:') {
     CREATE TABLE IF NOT EXISTS bot_updates(update_id INTEGER PRIMARY KEY,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS bot_outbox(id INTEGER PRIMARY KEY AUTOINCREMENT,update_id INTEGER NOT NULL,seq INTEGER NOT NULL,body_json TEXT,state TEXT NOT NULL DEFAULT 'prepared',UNIQUE(update_id,seq));
   `);
+  ensureAudience(sqlite);
   const DB={
     sqlite,
     prepare(sql) {

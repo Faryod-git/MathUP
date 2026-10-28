@@ -5,9 +5,10 @@ import {openDatabase} from '../src/database.mjs';
 import {createLocalServer} from '../src/server.mjs';
 import {passwordRecord} from '../src/auth.mjs';
 import {adminPage} from '../src/ui.mjs';
+import {deleteStudent} from '../src/local-data.mjs';
 export async function runDeletionSuite(){
  let count=0;const test=async(name,fn)=>{await fn();count++;console.log('PASS',name)};
- const h=await makeHarness();h.env.LOCAL_MODE=true;
+ const h=await makeHarness();h.env.LOCAL_MODE=true;h.env.DELETE_STUDENT=(id,version)=>deleteStudent({sqlite:h.sqlite},id,version);
  try{
   const parent=(await h.call('/api/parents','POST',{full_name:'SYNTHETIC DELETE FAMILY'})).data;
   h.sqlite.prepare('UPDATE parents SET telegram_chat_id=?,chat_verified=1,consent=0 WHERE id=?').run('910000000071',parent.id);
@@ -31,7 +32,7 @@ export async function runDeletionSuite(){
   try{
    let r=await fetch(base+'/auth/login',{method:'POST',headers,body:JSON.stringify({password:'Synthetic-delete-http-2026'})});assert.equal(r.status,200);const cookie=r.headers.get('set-cookie').split(';')[0];
    r=await fetch(base+'/api/students/1',{method:'DELETE',headers:{...headers,cookie,origin:'https://other.invalid'},body:JSON.stringify({version:1,confirm:true})});assert.equal(r.status,403);
-   r=await fetch(base+'/api/students/1',{method:'DELETE',headers:{...headers,cookie},body:JSON.stringify({version:1,confirm:true})});assert.equal(r.status,200);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students').get().n,0);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n,1);
+   r=await fetch(base+'/api/students/1',{method:'DELETE',headers:{...headers,cookie},body:JSON.stringify({version:1,confirm:true})});assert.equal(r.status,200);assert.equal((await r.json()).parent_deleted,true);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students').get().n,0);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n,0);
   }finally{await new Promise(r=>server.close(r));DB.close();}
  });return count;
 }

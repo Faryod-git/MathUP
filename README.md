@@ -8,7 +8,7 @@ Node.js 24.13+ (24.x tavsiya qilinadi), ichki SQLite; npm paketlari kerak emas.
 Admin panel: ota-onalar/o‘quvchilarni qo‘shish va tahrirlash, qidiruv va holat filtri,
 bir martalik Telegram bog‘lash havolasi, o‘quvchilar orqali tanlangan 1–20 ota-onaga xabarni oldindan
 ko‘rib, tasdiqlab yuborish. Bot: rozilik asosida ota-ona va farzandni ro‘yxatga olish,
-ro‘yxatni shu admin bazasiga avtomatik yozish, `/stop` bilan xabar roziligini bekor qilish.
+ro‘yxatni shu admin bazasiga avtomatik yozish. Telegram bog‘langan ota-onalarga xabar yuboriladi.
 Yangi botda TEST 1 va TEST 2 yo‘q. ChatPlace’dagi asl avtomatizatsiyalar o‘zgartirilmaydi.
 
 ## Holat
@@ -112,7 +112,7 @@ Ota-ona rozilik bermagan bo‘lsa belgilab bo‘lmaydi. `/stop` rozilikni bekor 
 
 `sent` — Telegram qabul qildi, o‘qilganini bildirmaydi. `unknown` — natija noaniq,
 avtomatik takror yuborilmaydi. Qayta jo‘natishdan oldin chatda tekshiring.
-Admin yuborgan matn bazaga yozilmaydi; hash va yuborish holati saqlanadi.
+O'quvchilar orqali tanlab yuborilgan matn bazaga yozilmaydi; hash va yuborish holati saqlanadi. Umumiy bot xabari esa tasdiqlangandan so'ng vaqtinchalik navbatda saqlanadi va yakunlangach tozalanadi.
 Bot javoblari vaqtinchalik navbatda turadi, yuborish natijasidan keyin matni o‘chiriladi.
 Yarim qolgan rozilikli shakllar 30 daqiqadan so‘ng keyingi bot so‘rovida tozalanadi.
 
@@ -179,4 +179,24 @@ Mahalliy paneldagi xabar oluvchilar uchun eski consent ustuni ishlatilmaydi: ota
 
 ### 1.4.0 — o‘quvchini bazadan o‘chirish
 
-O‘quvchilar jadvalidagi qizil O‘chirish tugmasi o‘quvchi ismi va sinfi ko‘rsatilgan tasdiqlash oynasini ochadi. Tasdiqlangach yozuv bazadan butunlay o‘chiriladi; bu arxivlash emas. Ota-ona va boshqa farzandlarning yozuvlari saqlanadi. Noto‘g‘ri o‘chirishni paneldan qaytarib bo‘lmaydi. O‘quvchi tahrirlangan bo‘lsa eski versiya bilan o‘chirilmaydi. O‘chirilgan o‘quvchi xabar tanlovidan chiqariladi va avval tayyorlangan xabar yuborish tasdig‘i bekor bo‘ladi. Haqiqiy bazadagi hech bir o‘quvchi avtomatik o‘chirilmaydi — har biri admin tomonidan tanlanadi.
+O‘quvchilar jadvalidagi qizil O‘chirish tugmasi o‘quvchi ismi va sinfi ko‘rsatilgan tasdiqlash oynasini ochadi. Tasdiqlangach yozuv bazadan butunlay o‘chiriladi; bu arxivlash emas. 1.5 dan boshlab oxirgi farzand o'chirilsa ota-ona ham o'chadi; boshqa farzandi bo'lsa saqlanadi. Noto‘g‘ri o‘chirishni paneldan qaytarib bo‘lmaydi. O‘quvchi tahrirlangan bo‘lsa eski versiya bilan o‘chirilmaydi. O‘chirilgan o‘quvchi xabar tanlovidan chiqariladi va avval tayyorlangan xabar yuborish tasdig‘i bekor bo‘ladi. Haqiqiy bazadagi hech bir o‘quvchi avtomatik o‘chirilmaydi — har biri admin tomonidan tanlanadi.
+
+### 1.5.0 - oilani o'chirish va umumiy bot xabarlari
+
+O'quvchini o'chirish tasdiqlanganda, uning boshqa farzand yozuvi qolmasa ota-ona ham bazadan butunlay o'chadi. Bog'lash kodlari, ro'yxat yozuvlari, Telegram bog'lanishi, bot foydalanuvchisi va unga tegishli navbatdagi xabarlar ham tozalanadi. Boshqa farzandi bor ota-ona saqlanadi. Oldindan tayyorlangan xabar tasdig'i yaroqsiz bo'ladi. Boshlangan yoki Telegram qabul qilgan xabarni qaytarib bo'lmaydi. Shaxsiy zaxira nusxalar avtomatik o'chirilmaydi.
+
+Oldingi versiyada farzandi o'chirilib, o'zi qolgan ota-onani Ota-onalar jadvalidagi O'chirish tugmasi orqali alohida tasdiqlab o'chirish mumkin. Bu tugma faqat farzand yozuvi yo'q ota-onada chiqadi; server buni qayta tekshiradi. Hech qanday haqiqiy yozuv avtomatik o'chirilmaydi.
+
+**Umumiy xabar / reklama yuborish:**
+
+1. Admin panelda **Bot foydalanuvchilari** bo'limini oching.
+2. Kerakli akkauntlarni belgilang yoki **Barcha faol foydalanuvchilarga yuborish** ni tanlang.
+3. Matn va kerak bo'lsa havola yozing. Bir navbatda 1000 tagacha foydalanuvchi.
+4. **Xabar oluvchilarni tekshirish** ni bosing, matn va aniq qabul qiluvchilarni ko'ring.
+5. **Tasdiqlash va yuborish** ni bosing. Oxirgi yuborishlarda natijani kuzating.
+
+Kompyuter, internet va Start.ps1 -Bot ishlab turishi kerak. Oddiy Start.ps1 bilan tasdiqlangan xabar navbatda qoladi. Birinchi jo'natish polling tugashini kutib, 25 soniyagacha kechikishi mumkin. Navbat kompyuter qayta ishga tushganda saqlanadi. Telegram 429 javobida kutadi; noma'lum tarmoq natijasini avtomatik takrorlamaydi. Bot bloklansa foydalanuvchi faol emas deb belgilanadi. Holatlar: sent - Telegram qabul qildi, failed - yuborilmadi, unknown - natija noma'lum, changed - foydalanuvchi o'zgargan. O'qilganini ko'rsatmaydi.
+
+Yangi foydalanuvchilar botga birinchi yozishidan boshlab hisoblanadi; Telegram ism va username avtomatik ko'chirilmaydi. Avvaldan bazadagi tasdiqlangan ota-onalarning Telegram ID'lari bir marta shu mahalliy bazada ro'yxatga olinadi. Eski ro'yxatdan o'tmagan foydalanuvchilar qayta /start yuborishi kerak. ChatPlace yoki Telegram'dan eski foydalanuvchilarni ommaviy olish bajarilmaydi. Audience admins bo'lsa faqat admin akkauntlari kuzatiladi; hammaga ishlashi uchun o'zingiz sozlagan audience all bo'lishi kerak.
+
+Yangilash: serverni Ctrl+C bilan to'xtating, ushbu paketdagi Apply-Update.ps1 -Target eski-papka buyrug'ini bajaring, keyin Start.ps1 -Bot va brauzerda Ctrl+F5. Updater config.json, secrets.dpapi yoki data/ ni ko'chirmaydi. Dastur keyingi ochilganda mavjud SQLite ichida bot foydalanuvchilari va xabar navbati uchun yangi jadvallarni qo'shadi.

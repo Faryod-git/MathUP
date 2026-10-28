@@ -1,5 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { createBotEngine } from './bot-engine.mjs';
+import {flushBroadcasts,recoverBroadcasts} from './broadcast.mjs';
 
 export function telegramApi(token,net=fetch) {
   const methods=new Set(['getMe','getWebhookInfo','getUpdates','sendMessage','answerCallbackQuery']);
@@ -45,15 +46,17 @@ export async function flushOutbox(DB,api,signal) {
 export async function runPolling(DB,config,{api=telegramApi(config.botToken),signal,onStatus=()=>{}}={}) {
   await checkBotReady(config,api);
   DB.sqlite.prepare("UPDATE bot_outbox SET state='unknown',body_json=NULL WHERE state='sending'").run();
+  recoverBroadcasts(DB);
   const process=createBotEngine(DB,config);let backoff=1000;
   const wait=ms=>delay(ms,undefined,{signal}).catch(()=>{});
-  const flush=async()=>{const retry=await flushOutbox(DB,api,signal);if(retry)await wait(retry*1000);return retry;};
+  const flush=async()=>{const retry=await flushOutbox(DB,api,signal)||await flushBroadcasts(DB,api,signal);if(retry)await wait(retry*1000);return retry;};
   onStatus({mode:'polling'});
   while(!signal?.aborted) {
     try {
       if(await flush())continue;
       const offset=Number(DB.sqlite.prepare("SELECT value FROM bot_state WHERE key='offset'").get()?.value||0);
-      const updates=await api('getUpdates',{offset,timeout:25,allowed_updates:['message','callback_query']},signal);
+      const pending=DB.sqlite.prepare("SELECT 1 FROM bot_broadcast_recipients WHERE state='queued' LIMIT 1").get();
+      const updates=await api('getUpdates',{offset,timeout:pending?1:25,allowed_updates:['message','callback_query','my_chat_member']},signal);
       if(!Array.isArray(updates))throw Error('Telegram javobi noto‘g‘ri');
       for(const update of updates) {
         if(signal?.aborted)break;

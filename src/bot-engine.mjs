@@ -10,6 +10,20 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
   const db=DB.sqlite,query=(sql,...v)=>db.prepare(sql).get(...v),run=(sql,...v)=>db.prepare(sql).run(...v);
   return function processUpdate(update) {
     if(!Number.isSafeInteger(update?.update_id))return false;
+    const member=update.my_chat_member;
+    if(member?.chat?.type==='private'&&/^[1-9]\d{0,15}$/.test(String(member.chat.id))){
+      const chat=String(member.chat.id);
+      if(config.audience!=='all'&&!config.adminTelegramIds.map(String).includes(chat))return false;
+      const state=member.new_chat_member?.status;
+      if(!['kicked','left','member'].includes(state))return false;
+      db.exec('BEGIN IMMEDIATE');
+      try{
+        if(query('SELECT update_id FROM bot_updates WHERE update_id=?',update.update_id)){db.exec('ROLLBACK');return false;}
+        run('INSERT INTO bot_updates(update_id,created) VALUES(?,?)',update.update_id,clock());
+        run('UPDATE bot_users SET active=?,version=version+1 WHERE chat_id=? AND active!=?',state==='member'?1:0,chat,state==='member'?1:0);
+        db.exec('COMMIT');return true;
+      }catch(e){db.exec('ROLLBACK');throw e;}
+    }
     const callback=update.callback_query,m=callback?.message||update.message,from=callback?.from||m?.from;
     if(m?.chat?.type!=='private'||String(m.chat.id)!==String(from?.id)||!/^\d{1,16}$/.test(String(from.id))||from.id<=0||from.is_bot)return false;
     const chat=String(from.id);
@@ -44,6 +58,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
     try {
       if(query('SELECT update_id FROM bot_updates WHERE update_id=?',update.update_id)){db.exec('ROLLBACK');return false;}
       run('INSERT INTO bot_updates(update_id,created) VALUES(?,?)',update.update_id,clock());
+      run('INSERT INTO bot_users(chat_id,first_seen,last_seen) VALUES(?,?,?) ON CONFLICT(chat_id) DO UPDATE SET last_seen=excluded.last_seen,version=bot_users.version+CASE WHEN bot_users.active=0 THEN 1 ELSE 0 END,active=1',chat,clock(),clock());
       run('DELETE FROM bot_sessions WHERE expires<=?',clock());
       if(callback?.id)queue('answerCallbackQuery',{callback_query_id:callback.id});
       const text=typeof m.text==='string'?m.text.trim():'',action=String(callback?.data||'');

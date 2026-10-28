@@ -98,12 +98,18 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    let where='p.archived=0',args=[];
    if(q){where+=' AND (instr(lower(p.display_name),lower(?))>0 OR instr(p.phone,?)>0 OR EXISTS(SELECT 1 FROM students s WHERE s.parent_id=p.id AND s.archived=0 AND instr(lower(s.full_name),lower(?))>0))';args.push(q,q,q)}
    if(filter){where+=' AND EXISTS(SELECT 1 FROM students s WHERE s.parent_id=p.id AND s.archived=0 AND s.status=?)';args.push(status(filter))}
-   return json({items:await all(env,'SELECT p.* FROM parents p WHERE '+where+' ORDER BY p.created_at DESC,p.id LIMIT 51 OFFSET ?',...args,offset)});
+   return json({items:await all(env,'SELECT p.*,(SELECT COUNT(*) FROM students family WHERE family.parent_id=p.id) AS student_count FROM parents p WHERE '+where+' ORDER BY p.created_at DESC,p.id LIMIT 51 OFFSET ?',...args,offset)});
   }
   if(path==='/api/parents'&&method==='POST'){
    const key='manual:'+id(),n=stamp();await run(env,'INSERT INTO parents(identity_key,display_name,phone,created_at,updated_at) VALUES(?,?,?,?,?)',key,text(b.full_name),phone(b.phone),n,n);return json(await first(env,'SELECT * FROM parents WHERE identity_key=?',key),201);
   }
   let match=path.match(/^\/api\/parents\/([1-9][0-9]{0,12})$/);
+  if(match&&method==='DELETE'){
+   if(!env.LOCAL_MODE)fail(404,'Sahifa topilmadi');
+   if(b.confirm!==true)fail(400,'Ota-onani o‘chirishni tasdiqlang');
+   if(!env.DELETE_PARENT)fail(503,'Mahalliy o‘chirish xizmati sozlanmagan');
+   return json(env.DELETE_PARENT(match[1],integer(b.version)));
+  }
   if(match&&method==='PATCH'){
    const p=await parent(env,match[1]),v=integer(b.version),archived=b.archived===true?1:0;
    const r=await run(env,'UPDATE parents SET display_name=?,phone=?,consent=?,archived=?,version=version+1,updated_at=? WHERE id=? AND version=?',text(b.full_name),phone(b.phone),env.LOCAL_MODE?p.consent:(b.consent===true&&p.consent&&p.telegram_id?1:0),archived,stamp(),p.id,v);
@@ -116,7 +122,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    if(q){where+=' AND (instr(lower(s.full_name),lower(?))>0 OR instr(lower(p.display_name),lower(?))>0 OR instr(p.phone,?)>0)';args.push(q,q,q)}
    if(filter){where+=' AND s.status=?';args.push(status(filter))}
    const offset=Math.max(0,Math.min(Math.floor(Number(url.searchParams.get('offset'))||0),100000));
-   return json({items:await all(env,'SELECT s.*,p.display_name AS parent_name,p.telegram_chat_id AS parent_telegram_id,p.chat_verified AS parent_chat_verified,p.consent AS parent_consent FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
+   return json({items:await all(env,'SELECT s.*,(SELECT COUNT(*) FROM students family WHERE family.parent_id=s.parent_id) AS parent_student_count,p.display_name AS parent_name,p.telegram_chat_id AS parent_telegram_id,p.chat_verified AS parent_chat_verified,p.consent AS parent_consent FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
   }
   if(path==='/api/students'&&method==='POST'){
    await parent(env,b.parent_id);const n=stamp();const result=await first(env,'INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,?,?,?) RETURNING id',b.parent_id,text(b.full_name),grade(b.grade),status(b.status||'pending'),n,n);return json(result,201);
@@ -126,9 +132,8 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    if(!env.LOCAL_MODE)fail(404,'Sahifa topilmadi');
    if(b.confirm!==true)fail(400,'O‘quvchini o‘chirishni tasdiqlang');
    const version=integer(b.version);
-   const removed=await first(env,'DELETE FROM students WHERE id=? AND version=? RETURNING id',match[1],version);
-   if(!removed){const exists=await first(env,'SELECT id FROM students WHERE id=?',match[1]);fail(exists?409:404,exists?'O‘quvchi ma’lumotlari o‘zgargan. Ro‘yxatni yangilang':'O‘quvchi topilmadi');}
-   return json({ok:true,deleted_id:removed.id});
+   if(!env.DELETE_STUDENT)fail(503,'Mahalliy o‘chirish xizmati sozlanmagan');
+   return json(env.DELETE_STUDENT(match[1],version));
   }
   if(match&&method==='PATCH'){
    await parent(env,b.parent_id);const r=await run(env,'UPDATE students SET parent_id=?,full_name=?,grade=?,status=?,archived=?,version=version+1,updated_at=? WHERE id=? AND version=? AND archived=0',b.parent_id,text(b.full_name),grade(b.grade),status(b.status),b.archived===true?1:0,stamp(),match[1],integer(b.version));
