@@ -127,7 +127,7 @@ try {
     await test('Daily registration limit stops the sixth accepted request',()=>{
       register('LIMIT FOUR');register('LIMIT FIVE');const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM students').get().n;register('LIMIT SIX');assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students').get().n,n);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM mathup_registrations WHERE telegram_id=?').get(chat).n,5);
     });
-    await test('/stop immediately revokes message permission',()=>{
+    await test('Legacy stop command updates the retained profile field',()=>{
       DB.sqlite.prepare('UPDATE parents SET consent=1 WHERE telegram_chat_id=?').run(chat);text('/stop');assert.equal(DB.sqlite.prepare('SELECT consent FROM parents WHERE telegram_chat_id=?').get(chat).consent,0);
     });
     const linkChat='910000000003';config.adminTelegramIds.push(linkChat);
