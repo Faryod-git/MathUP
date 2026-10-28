@@ -176,3 +176,7 @@ Bot tugmalariga ikonlar qo‘shildi; eski matnli tugmalar ham ishlaydi. Admin va
 ### 1.3.1 — xabar oluvchilar tekshiruvi
 
 Mahalliy paneldagi xabar oluvchilar uchun eski consent ustuni ishlatilmaydi: ota-ona arxivlanmagan va Telegram akkaunti tasdiqlab bog‘langan bo‘lishi kifoya. Eski yozuvlarda consent=0 bo‘lsa ham o‘quvchini tanlash, oldindan ko‘rish va yuborish ishlaydi. Bazadagi eski qiymatlarni qo‘lda o‘zgartirish yoki qayta ro‘yxatdan o‘tish kerak emas. Rozilik holati va eski tahrirlash katagi paneldan olib tashlandi. Oldindan ko‘rishdan keyingi o‘zgarishlar, bir oilaga bitta xabar va takror yuborishdan himoya saqlangan.
+
+### 1.4.0 — o‘quvchini bazadan o‘chirish
+
+O‘quvchilar jadvalidagi qizil O‘chirish tugmasi o‘quvchi ismi va sinfi ko‘rsatilgan tasdiqlash oynasini ochadi. Tasdiqlangach yozuv bazadan butunlay o‘chiriladi; bu arxivlash emas. Ota-ona va boshqa farzandlarning yozuvlari saqlanadi. Noto‘g‘ri o‘chirishni paneldan qaytarib bo‘lmaydi. O‘quvchi tahrirlangan bo‘lsa eski versiya bilan o‘chirilmaydi. O‘chirilgan o‘quvchi xabar tanlovidan chiqariladi va avval tayyorlangan xabar yuborish tasdig‘i bekor bo‘ladi. Haqiqiy bazadagi hech bir o‘quvchi avtomatik o‘chirilmaydi — har biri admin tomonidan tanlanadi.

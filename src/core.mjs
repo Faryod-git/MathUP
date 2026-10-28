@@ -79,7 +79,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
   if(!publicRoute)actor=await authorize(request,env,net);
   if(path==='/'&&method==='GET')return html(adminPage);
   let b;
-  if(['POST','PATCH'].includes(method)){originCheck(request);b=await readBody(request)}
+  if(['POST','PATCH','DELETE'].includes(method)){originCheck(request);b=await readBody(request)}
   if(path==='/api/telegram/registration-menu'&&method==='POST'){
    if(b.confirm!==true)fail(400,'Bot menyusini sozlashni tasdiqlang');
    if(env.PUBLIC_REGISTRATION_ENABLED!=='true')fail(503,'Avval ota-onalar ro‘yxatdan o‘tishini yoqing');
@@ -122,6 +122,14 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    await parent(env,b.parent_id);const n=stamp();const result=await first(env,'INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,?,?,?) RETURNING id',b.parent_id,text(b.full_name),grade(b.grade),status(b.status||'pending'),n,n);return json(result,201);
   }
   match=path.match(/^\/api\/students\/([1-9][0-9]{0,12})$/);
+  if(match&&method==='DELETE'){
+   if(!env.LOCAL_MODE)fail(404,'Sahifa topilmadi');
+   if(b.confirm!==true)fail(400,'O‘quvchini o‘chirishni tasdiqlang');
+   const version=integer(b.version);
+   const removed=await first(env,'DELETE FROM students WHERE id=? AND version=? RETURNING id',match[1],version);
+   if(!removed){const exists=await first(env,'SELECT id FROM students WHERE id=?',match[1]);fail(exists?409:404,exists?'O‘quvchi ma’lumotlari o‘zgargan. Ro‘yxatni yangilang':'O‘quvchi topilmadi');}
+   return json({ok:true,deleted_id:removed.id});
+  }
   if(match&&method==='PATCH'){
    await parent(env,b.parent_id);const r=await run(env,'UPDATE students SET parent_id=?,full_name=?,grade=?,status=?,archived=?,version=version+1,updated_at=? WHERE id=? AND version=? AND archived=0',b.parent_id,text(b.full_name),grade(b.grade),status(b.status),b.archived===true?1:0,stamp(),match[1],integer(b.version));
    if(!r.meta.changes)fail(409,'O‘quvchi o‘zgargan yoki topilmadi');return json({ok:true});

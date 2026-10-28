@@ -37,7 +37,7 @@ export function createLocalServer({DB,config,demo=false,botStatus=()=>({mode:'of
       headers.delete('Cf-Access-Jwt-Assertion');
       let body;
       if(!['GET','HEAD'].includes(method)) {
-        if(!['POST','PATCH'].includes(method)){await respond(json({error:'Usul ruxsat etilmagan'},405));return;}
+        if(!['POST','PATCH','DELETE'].includes(method)){await respond(json({error:'Usul ruxsat etilmagan'},405));return;}
         if(headers.get('origin')!==base||headers.get('sec-fetch-site')==='cross-site'){await respond(json({error:'So‘rov manbasi noto‘g‘ri'},403));return;}
         if(!(headers.get('content-type')||'').startsWith('application/json')){await respond(json({error:'JSON kerak'},415));return;}
         const chunks=[];let size=0;
