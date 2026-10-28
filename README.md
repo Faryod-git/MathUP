@@ -13,8 +13,11 @@ Yangi botda TEST 1 va TEST 2 yo‘q. ChatPlace’dagi asl avtomatizatsiyalar o�
 ## Holat
 
 - Linux/Node 24.22.1 da 64 ta tekshiruv o‘tdi; Telegram chaqiruvlari sun’iy.
-- Windows PowerShell/DPAPI tekshiruvi GitHub Actions’ning Windows ishida ham bajariladi.
-  Natijani repository’dagi **Actions → Tests** orqali ko‘ring.
+- GitHub Actions’da Linux’da 64 ta, Windows’da 65 ta tekshiruv o‘tdi.
+  Windows DPAPI/.NET/Node parol mosligi va barcha PowerShell skriptlari ham tekshirildi.
+  [Tasdiqlangan natija](https://github.com/Faryod-git/MathUP/actions/runs/40489623399).
+- Alohida namuna server jarayonini ishga tushirish, parol bilan kirish va sun’iy
+  ro‘yxatni o‘qish ham tekshirildi; sinov jarayoni to‘xtatildi.
 - Haqiqiy token, admin paroli va shaxsiy baza bu repository’da yo‘q.
 - Kompyuterdagi amaliy o‘rnatish va haqiqiy botga ulash hali bajarilmagan.
 - Cloudflare Worker/D1 va ChatPlace webhook’i bu kod tomonidan o‘zgartirilmaydi.
