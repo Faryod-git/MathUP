@@ -172,3 +172,7 @@ Sinf tanlangach ro‘yxat saqlanadi. Xabarlar uchun alohida savol va xabarlarni 
 ### 1.3.0 — yangilangan ko‘rinish
 
 Bot tugmalariga ikonlar qo‘shildi; eski matnli tugmalar ham ishlaydi. Admin va kirish sahifalari to‘q ko‘k/binafsha uslubda yangilandi. Kartochkalar joriy sahifadagi ro‘yxat sonini va tanlangan o‘quvchi/ota-ona sonini ko‘rsatadi. Mobil jadvallar yon tomonga suriladi. Windows Chrome’da 1440px va 390px o‘lchamlarida kirish, tanlash, xabarni oldindan ko‘rish va dialoglar sun’iy ma’lumotlarda tekshirildi.
+
+### 1.3.1 — xabar oluvchilar tekshiruvi
+
+Mahalliy paneldagi xabar oluvchilar uchun eski consent ustuni ishlatilmaydi: ota-ona arxivlanmagan va Telegram akkaunti tasdiqlab bog‘langan bo‘lishi kifoya. Eski yozuvlarda consent=0 bo‘lsa ham o‘quvchini tanlash, oldindan ko‘rish va yuborish ishlaydi. Bazadagi eski qiymatlarni qo‘lda o‘zgartirish yoki qayta ro‘yxatdan o‘tish kerak emas. Rozilik holati va eski tahrirlash katagi paneldan olib tashlandi. Oldindan ko‘rishdan keyingi o‘zgarishlar, bir oilaga bitta xabar va takror yuborishdan himoya saqlangan.

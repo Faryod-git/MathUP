@@ -106,7 +106,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
   let match=path.match(/^\/api\/parents\/([1-9][0-9]{0,12})$/);
   if(match&&method==='PATCH'){
    const p=await parent(env,match[1]),v=integer(b.version),archived=b.archived===true?1:0;
-   const r=await run(env,'UPDATE parents SET display_name=?,phone=?,consent=?,archived=?,version=version+1,updated_at=? WHERE id=? AND version=?',text(b.full_name),phone(b.phone),b.consent===true&&p.consent&&p.telegram_id?1:0,archived,stamp(),p.id,v);
+   const r=await run(env,'UPDATE parents SET display_name=?,phone=?,consent=?,archived=?,version=version+1,updated_at=? WHERE id=? AND version=?',text(b.full_name),phone(b.phone),env.LOCAL_MODE?p.consent:(b.consent===true&&p.consent&&p.telegram_id?1:0),archived,stamp(),p.id,v);
    if(!r.meta.changes)fail(409,'Ma’lumot o‘zgargan. Ro‘yxatni yangilang');
    return json({ok:true});
   }
@@ -191,7 +191,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
     pids=[...new Set(studentSelection.map(s=>s.parent_id))];
    }
    if(!Array.isArray(pids)||!pids.length||pids.length>20||new Set(pids).size!==pids.length)fail(400,'1–20 ta ota-onani tanlang');
-   const parents=[];for(const pid of pids){const p=await parent(env,pid);if(!p.telegram_id||!p.consent)fail(409,'Tanlanganlar orasida Telegram yoki rozilik yetishmaydi');parents.push(p)}
+   const parents=[];for(const pid of pids){const p=await parent(env,pid);if(!p.telegram_id||!p.chat_verified||(!env.LOCAL_MODE&&!p.consent))fail(409,'Ota-onaning Telegram akkaunti tasdiqlab bog‘lanmagan');parents.push(p)}
    const batch=id(),hash=await digest(studentSelection?JSON.stringify({text:message,students:studentSelection}):message),expires=now()+600;
    await run(env,'DELETE FROM mathup_deliveries WHERE expires<?',now()-86400);
    await env.DB.batch(parents.map(p=>env.DB.prepare('INSERT INTO mathup_deliveries(batch_id,parent_id,telegram_id,parent_version,actor,body_hash,expires) VALUES(?,?,?,?,?,?,?)').bind(batch,p.id,p.telegram_id,p.version,actor,hash,expires)));
@@ -209,7 +209,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    const results=[];
    for(const r of rows){
     const p=await first(env,'SELECT * FROM parents WHERE id=?',r.parent_id);
-    if(!p||p.archived||!p.consent||p.telegram_id!==r.telegram_id||p.version!==r.parent_version){results.push({parent_id:r.parent_id,status:'changed'});continue}
+    if(!p||p.archived||!p.chat_verified||(!env.LOCAL_MODE&&!p.consent)||p.telegram_id!==r.telegram_id||p.version!==r.parent_version){results.push({parent_id:r.parent_id,status:'changed'});continue}
     const claim=await run(env,"UPDATE mathup_deliveries SET state='sending' WHERE batch_id=? AND parent_id=? AND state='prepared' AND NOT EXISTS(SELECT 1 FROM json_each(?) j LEFT JOIN students s ON s.id=json_extract(j.value,'$.id') WHERE s.id IS NULL OR s.archived!=0 OR s.parent_id!=json_extract(j.value,'$.parent_id') OR s.version!=json_extract(j.value,'$.version'))",r.batch_id,r.parent_id,JSON.stringify(studentSelection||[]));
     if(!claim.meta.changes){results.push({parent_id:r.parent_id,status:r.state==='prepared'?'changed':r.state});continue}
     let state='unknown';

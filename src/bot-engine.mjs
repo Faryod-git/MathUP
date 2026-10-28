@@ -54,7 +54,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
       if(command==='/cancel'){clear();say('Jarayon bekor qilindi. /register orqali qayta boshlashingiz mumkin.');}
       else if(command==='/stop'){
         clear();run('UPDATE parents SET consent=0,version=version+1,updated_at=? WHERE telegram_chat_id=?',new Date(clock()*1000).toISOString(),chat);
-        say('Xabarlar roziligi bekor qilindi. Qayta rozilik berish uchun /register.');
+        say('Xabarlar bo‘yicha ma’muriyatga murojaat qiling. Telegram xabarlarini to‘xtatish uchun botni bloklashingiz mumkin.');
       }
       else if(command==='/children') {
         clear();const parent=query('SELECT id FROM parents WHERE telegram_chat_id=? AND chat_verified=1 AND archived=0',chat);
