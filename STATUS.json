@@ -1,20 +1,19 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "local_admin": "implemented_and_http_tested",
   "bot_registration": "implemented_mock_tested",
   "test_1_test_2_in_new_bot": "absent",
   "chatplace_original_automations": "unchanged",
-  "synthetic_checks_passed_linux": 64,
-  "synthetic_checks_passed_windows": 65,
-  "ci_result": "success",
-  "ci_url": "https://github.com/Faryod-git/MathUP/actions/runs/40489623399",
+  "synthetic_checks_passed_linux": 79,
+  "synthetic_checks_passed_windows": 80,
+  "ci_result": "pending_for_version_1.1",
   "demo_process_startup_login_roster": "passed",
   "live_telegram_messages_sent_this_build": 0,
   "live_credentials_used_this_build": false,
   "windows_dpapi_test": "passed_in_windows_ci",
   "windows_powershell_syntax": "passed_in_windows_ci",
   "production_bot_migration": "not_performed",
-  "windows_installation": "pending_user_computer_connection_and_setup",
+  "windows_installation": "source_update_requires_restart",
   "cloudflare_worker_and_d1": "unchanged",
   "real_personal_data_import": "not_performed",
   "blockers": [
@@ -22,5 +21,8 @@
     "Configure the user's own numeric Telegram ID before testing",
     "An active ChatPlace webhook prevents long polling; no automatic change is allowed",
     "Remote Telegram admin needs separate secured HTTPS setup; current admin is loopback only"
-  ]
+  ],
+  "student_based_recipient_selection": true,
+  "deduplicated_parent_delivery": true,
+  "parent_bot_buttons": true
 }

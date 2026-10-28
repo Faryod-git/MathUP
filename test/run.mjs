@@ -1,3 +1,4 @@
+import {runFeatureSuite} from './features.mjs';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,6 +17,7 @@ import { runSuite } from './legacy.mjs';
 
 let passed=0;
 async function test(name,fn){await fn();passed++;console.log('PASS',name);}
+const added=await runFeatureSuite();passed+=added;
 const legacy=await runSuite();passed+=legacy.passed;console.log(`PASS ${legacy.passed} existing API regression cases (mock Telegram only)`);
 const dir=mkdtempSync(join(tmpdir(),'mathup-tests-'));
 const record=passwordRecord('Synthetic-password-2026');
@@ -95,7 +97,7 @@ try {
       const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n;text('/register',{id:'910000000099'});text('/register',{type:'group'});assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n,n);
     });
     await test('Bot has registration menu without TEST 1 or TEST 2',()=>{
-      text('/start');const payload=JSON.parse(DB.sqlite.prepare('SELECT body_json FROM bot_outbox ORDER BY id DESC LIMIT 1').get().body_json);assert.deepEqual(payload.body.reply_markup.inline_keyboard.map(r=>r[0].callback_data),['register']);
+      text('/start');const payload=JSON.parse(DB.sqlite.prepare('SELECT body_json FROM bot_outbox ORDER BY id DESC LIMIT 1').get().body_json);assert.ok(payload.body.reply_markup.inline_keyboard.flat().some(b=>b.callback_data==='register'));assert.ok(!JSON.stringify(payload).includes('TEST 1'));assert.ok(!JSON.stringify(payload).includes('TEST 2'));
     });
     await test('Registration asks consent before names and stores no implicit Telegram name',()=>{
       text('/register');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('PRIVATE'));text('UNCONSENTED NAME');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('UNCONSENTED'));choose('consent-yes');assert.equal(state().stage,'parent');
@@ -173,7 +175,7 @@ try {
     const db=openDatabase(),engine=createBotEngine(db,{...config,publicRegistrationEnabled:false});engine({update_id:1,message:{chat:{type:'private',id:910000000001},from:{id:910000000001},text:'/register'}});assert.equal(db.sqlite.prepare('SELECT COUNT(*) n FROM bot_sessions').get().n,0);assert.equal(db.sqlite.prepare('SELECT COUNT(*) n FROM parents').get().n,0);db.close();
   });
   if(process.platform==='win32')await test('Windows DPAPI and .NET PBKDF2 agree with Node',()=>{
-    const r=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-File',new URL('./windows-secrets.ps1',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);const synthetic=JSON.parse(r.stdout.replace(/^\uFEFF/,''));assert.equal(createAuth(synthetic).login('Synthetic-cross-runtime-2026').status,200);
+    const r=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',new URL('./windows-secrets.ps1',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);const synthetic=JSON.parse(r.stdout.replace(/^\uFEFF/,''));assert.equal(createAuth(synthetic).login('Synthetic-cross-runtime-2026').status,200);
   });
   console.log(JSON.stringify({passed,failed:0,real_messages_sent:0,live_credentials_used:false,windows_dpapi:process.platform==='win32'?'passed':'not run on this OS'}));
 } finally {rmSync(dir,{recursive:true,force:true});}

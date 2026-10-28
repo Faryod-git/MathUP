@@ -116,7 +116,7 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    if(q){where+=' AND (instr(lower(s.full_name),lower(?))>0 OR instr(lower(p.display_name),lower(?))>0 OR instr(p.phone,?)>0)';args.push(q,q,q)}
    if(filter){where+=' AND s.status=?';args.push(status(filter))}
    const offset=Math.max(0,Math.min(Math.floor(Number(url.searchParams.get('offset'))||0),100000));
-   return json({items:await all(env,'SELECT s.*,p.display_name AS parent_name FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
+   return json({items:await all(env,'SELECT s.*,p.display_name AS parent_name,p.telegram_chat_id AS parent_telegram_id,p.chat_verified AS parent_chat_verified,p.consent AS parent_consent FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
   }
   if(path==='/api/students'&&method==='POST'){
    await parent(env,b.parent_id);const n=stamp();const result=await first(env,'INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,?,?,?) RETURNING id',b.parent_id,text(b.full_name),grade(b.grade),status(b.status||'pending'),n,n);return json(result,201);
@@ -183,26 +183,35 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    return json({ok:true},201);
   }
   if(path==='/api/messages/prepare'&&method==='POST'){
-   const message=messageText(b.text),pids=b.parent_ids;
+   const message=messageText(b.text);let pids=b.parent_ids,studentSelection;
+   if(b.student_ids!==undefined){
+    if(b.parent_ids!==undefined||!Array.isArray(b.student_ids)||!b.student_ids.length||b.student_ids.length>100||new Set(b.student_ids.map(String)).size!==b.student_ids.length)fail(400,'1–100 ta o‘quvchini tanlang');
+    studentSelection=[];
+    for(const sid of b.student_ids){if(!/^[1-9][0-9]{0,12}$/.test(String(sid)))fail(400,'O‘quvchi ID noto‘g‘ri');const s=await first(env,'SELECT s.id,s.parent_id,s.version FROM students s JOIN parents p ON p.id=s.parent_id WHERE s.id=? AND s.archived=0 AND p.archived=0',String(sid));if(!s)fail(409,'Tanlangan o‘quvchi topilmadi; ro‘yxatni yangilang');studentSelection.push({id:s.id,parent_id:s.parent_id,version:s.version});}
+    pids=[...new Set(studentSelection.map(s=>s.parent_id))];
+   }
    if(!Array.isArray(pids)||!pids.length||pids.length>20||new Set(pids).size!==pids.length)fail(400,'1–20 ta ota-onani tanlang');
    const parents=[];for(const pid of pids){const p=await parent(env,pid);if(!p.telegram_id||!p.consent)fail(409,'Tanlanganlar orasida Telegram yoki rozilik yetishmaydi');parents.push(p)}
-   const batch=id(),hash=await digest(message),expires=now()+600;
+   const batch=id(),hash=await digest(studentSelection?JSON.stringify({text:message,students:studentSelection}):message),expires=now()+600;
    await run(env,'DELETE FROM mathup_deliveries WHERE expires<?',now()-86400);
    await env.DB.batch(parents.map(p=>env.DB.prepare('INSERT INTO mathup_deliveries(batch_id,parent_id,telegram_id,parent_version,actor,body_hash,expires) VALUES(?,?,?,?,?,?,?)').bind(batch,p.id,p.telegram_id,p.version,actor,hash,expires)));
-   return json({batch_id:batch,expires_in:600,text:message,recipients:parents.map(p=>({id:p.id,full_name:p.full_name}))});
+   return json({batch_id:batch,expires_in:600,text:message,...(studentSelection?{student_selection:studentSelection}:{}),recipients:parents.map(p=>({id:p.id,full_name:p.full_name}))});
   }
   if(path==='/api/messages/send'&&method==='POST'){
    if(!env.TELEGRAM_BOT_TOKEN)fail(503,'Telegram bot tokeni sozlanmagan');
    if(b.confirm!==true)fail(400,'Yuborishni tasdiqlang');
-   const message=messageText(b.text),hash=await digest(message);
+   const message=messageText(b.text),studentSelection=b.student_selection;
+   if(studentSelection!==undefined&&(!Array.isArray(studentSelection)||!studentSelection.length||studentSelection.length>100||studentSelection.some(s=>!s||typeof s.id!=='string'||typeof s.parent_id!=='string'||!Number.isInteger(s.version))))fail(400,'O‘quvchilar tasdig‘i noto‘g‘ri');
+   const hash=await digest(studentSelection?JSON.stringify({text:message,students:studentSelection}):message);
    const rows=await all(env,'SELECT * FROM mathup_deliveries WHERE batch_id=? AND actor=?',b.batch_id,actor);
    if(!rows.length||rows.some(r=>r.body_hash!==hash||r.expires<now()))fail(409,'Tasdiqlash eskirgan yoki xabar o‘zgargan');
+   if(studentSelection){for(const snapshot of studentSelection){const current=await first(env,'SELECT id,parent_id,version FROM students WHERE id=? AND archived=0',snapshot.id);if(!current||current.parent_id!==snapshot.parent_id||current.version!==snapshot.version)fail(409,'O‘quvchi ma’lumotlari o‘zgargan. Qabul qiluvchilarni qayta tekshiring');}}
    const results=[];
    for(const r of rows){
     const p=await first(env,'SELECT * FROM parents WHERE id=?',r.parent_id);
     if(!p||p.archived||!p.consent||p.telegram_id!==r.telegram_id||p.version!==r.parent_version){results.push({parent_id:r.parent_id,status:'changed'});continue}
-    const claim=await run(env,"UPDATE mathup_deliveries SET state='sending' WHERE batch_id=? AND parent_id=? AND state='prepared'",r.batch_id,r.parent_id);
-    if(!claim.meta.changes){results.push({parent_id:r.parent_id,status:r.state});continue}
+    const claim=await run(env,"UPDATE mathup_deliveries SET state='sending' WHERE batch_id=? AND parent_id=? AND state='prepared' AND NOT EXISTS(SELECT 1 FROM json_each(?) j LEFT JOIN students s ON s.id=json_extract(j.value,'$.id') WHERE s.id IS NULL OR s.archived!=0 OR s.parent_id!=json_extract(j.value,'$.parent_id') OR s.version!=json_extract(j.value,'$.version'))",r.batch_id,r.parent_id,JSON.stringify(studentSelection||[]));
+    if(!claim.meta.changes){results.push({parent_id:r.parent_id,status:r.state==='prepared'?'changed':r.state});continue}
     let state='unknown';
     try {
      const response=await net('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:r.telegram_id,text:message}),signal:AbortSignal.timeout(8000)});

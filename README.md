@@ -1,3 +1,4 @@
+<!-- MathUP Local 1.1 -->
 # MathUP
 MathUP kursi uchun kerakli manbalar.
 
@@ -5,7 +6,7 @@ MathUP Local — Windows kompyuterda ishlaydigan admin panel va Telegram bot.
 Node.js 24.13+ (24.x tavsiya qilinadi), ichki SQLite; npm paketlari kerak emas.
 
 Admin panel: ota-onalar/o‘quvchilarni qo‘shish va tahrirlash, qidiruv va holat filtri,
-bir martalik Telegram bog‘lash havolasi, tanlangan 1–20 ota-onaga xabarni oldindan
+bir martalik Telegram bog‘lash havolasi, o‘quvchilar orqali tanlangan 1–20 ota-onaga xabarni oldindan
 ko‘rib, tasdiqlab yuborish. Bot: rozilik asosida ota-ona va farzandni ro‘yxatga olish,
 ro‘yxatni shu admin bazasiga avtomatik yozish, `/stop` bilan xabar roziligini bekor qilish.
 Yangi botda TEST 1 va TEST 2 yo‘q. ChatPlace’dagi asl avtomatizatsiyalar o‘zgartirilmaydi.
@@ -151,3 +152,11 @@ SQLite API: [Node.js 24 rasmiy hujjati](https://nodejs.org/download/release/late
 `.gitignore` ishchi `config.json`, `secrets.dpapi`, `.env*`, `data/`, `backups/`,
 loglar va bazalarni chetlatadi. `.gitignore` oldin commit qilingan sirni olib tashlamaydi:
 faqat kod va `config.example.json` ni yuklang. Parol/token/baza eksportlarini commit qilmang.
+
+## 1.1 yangiliklari
+
+Botda ro‘yxatdan o‘tish, farzand qo‘shish, mening farzandlarim, bosh menyu, bekor qilish va xabarlarni to‘xtatish tugmalari bor. Telefon tugmasi faqat yuboruvchining o‘z kontaktini qabul qiladi; sinf 1–11 tugmalar orqali tanlanadi.
+
+Xabar uchun ota-ona o‘rniga o‘quvchilar qatoridagi kataklarni belgilang. Bir yuborishda 100 tagacha o‘quvchi va 20 tagacha ota-ona. Bir oilaning bir nechta farzandi tanlansa ham xabar bir marta boradi. Oldindan ko‘rishdan keyin o‘quvchi yozuvi o‘zgarsa, qabul qiluvchilarni qayta tekshirish kerak.
+
+Yangilash: serverni Ctrl+C bilan to‘xtating. Yangi paketdagi Apply-Update.ps1 ni -Target eski loyiha papkasi bilan ishga tushiring. U faqat kod fayllarini zaxiralab almashtiradi; config.json, secrets.dpapi va data/ ko‘chirilmaydi. Keyin Start.ps1 -Bot va brauzerda Ctrl+F5. Eski bot xabarlaridagi sinf tugmalari eskirishi mumkin; Bosh menyu yoki /start bilan qayta boshlang.

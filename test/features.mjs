@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import {Script} from 'node:vm';
+import {makeHarness} from './legacy.mjs';
+import {openDatabase} from '../src/database.mjs';
+import {createBotEngine} from '../src/bot-engine.mjs';
+import {createStudentSelection} from '../src/student-selection.mjs';
+import {adminPage} from '../src/ui.mjs';
+export async function runFeatureSuite(){
+ let n=0;const test=async(name,fn)=>{await fn();n++;console.log('PASS',name)};
+ await test('Student selection deduplicates families and enforces eligibility and limits',()=>{
+  const s=createStudentSelection(),student=(id,parent_id)=>({id:String(id),parent_id:String(parent_id),parent_telegram_id:'910000000001',parent_chat_verified:1,parent_consent:1});s.add(student(1,1));s.add(student(2,1));assert.equal(s.size,2);assert.equal(s.parentCount(),1);s.delete('1');assert.equal(s.parentCount(),1);assert.throws(()=>s.add({...student(3,2),parent_consent:0}));assert.throws(()=>s.add({...student(3,2),parent_chat_verified:0}));for(let i=3;i<=21;i++)s.add(student(i,i));assert.equal(s.parentCount(),20);assert.throws(()=>s.add(student(22,22)));s.clear();for(let i=1;i<=100;i++)s.add(student(i,1));assert.throws(()=>s.add(student(101,1)));
+ });
+ await test('Admin script compiles and sends student selections rather than parent checkboxes',()=>{
+  for(const [,script] of adminPage.matchAll(/<script>([\s\S]*?)<\/script>/g))new Script(script);assert.ok(adminPage.includes('student_ids:selected.ids()'));assert.ok(adminPage.includes('student_selection:prepared.student_selection'));assert.ok(!adminPage.includes('parent_ids:[...selected]'));
+ });
+ const h=await makeHarness();
+ try{
+  const parentIds=[],students=[];
+  for(let i=0;i<2;i++){const p=(await h.call('/api/parents','POST',{full_name:'SYNTHETIC FAMILY '+i})).data;parentIds.push(p.id);h.sqlite.prepare('UPDATE parents SET telegram_chat_id=?,chat_verified=1,consent=1 WHERE id=?').run('91000000000'+(i+1),p.id);}
+  for(let i=0;i<3;i++)students.push((await h.call('/api/students','POST',{full_name:'SYNTHETIC STUDENT '+i,parent_id:parentIds[i===2?1:0],grade:5})).data.id);
+  await test('Student list exposes eligibility even when parent is not on current parent page',async()=>{const data=(await h.call('/api/students')).data.items;assert.ok(data.every(s=>s.parent_telegram_id&&s.parent_consent===1&&s.parent_chat_verified===1));});
+  let preview;
+  await test('Three selected students in two families prepare exactly two recipients',async()=>{const r=await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC STUDENT MESSAGE',student_ids:students});assert.equal(r.status,200);preview=r.data;assert.equal(preview.recipients.length,2);assert.equal(preview.student_selection.length,3);assert.equal(h.sends.length,0);});
+  await test('Student preview cannot be changed or stripped to send a different recipient set',async()=>{
+   assert.equal((await h.call('/api/messages/send','POST',{batch_id:preview.batch_id,text:preview.text,confirm:true})).status,409);
+   assert.equal((await h.call('/api/messages/send','POST',{batch_id:preview.batch_id,text:preview.text,confirm:true,student_selection:preview.student_selection.slice(1)})).status,409);assert.equal(h.sends.length,0);
+  });
+  await test('Selected students send once per parent and repeated confirmation sends nothing extra',async()=>{const body={batch_id:preview.batch_id,text:preview.text,student_selection:preview.student_selection,confirm:true};assert.equal((await h.call('/api/messages/send','POST',body)).status,200);assert.equal(h.sends.length,2);await h.call('/api/messages/send','POST',body);assert.equal(h.sends.length,2);});
+  await test('Student reassignment after preview prevents all delivery until preview is refreshed',async()=>{const p=(await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC REASSIGN',student_ids:[students[0]]})).data;h.sqlite.prepare('UPDATE students SET parent_id=?,version=version+1 WHERE id=?').run(parentIds[1],students[0]);const r=await h.call('/api/messages/send','POST',{batch_id:p.batch_id,text:p.text,student_selection:p.student_selection,confirm:true});assert.equal(r.status,409);assert.equal(h.sends.length,2);});
+  await test('Atomic claim catches a student edit racing after preview validation',async()=>{
+   const preview=(await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC RACE',student_ids:[students[1]]})).data;const original=h.env.DB.prepare;let changed=false;
+   h.env.DB.prepare=function(sql){const statement=original.call(this,sql);if(sql.includes("SET state='sending'")){const run=statement.run;statement.run=async function(){if(!changed){h.sqlite.prepare('UPDATE students SET version=version+1 WHERE id=?').run(students[1]);changed=true;}return run.call(this);};}return statement;};
+   try{const response=await h.call('/api/messages/send','POST',{batch_id:preview.batch_id,text:preview.text,student_selection:preview.student_selection,confirm:true});assert.equal(response.status,200);assert.equal(response.data.results[0].status,'changed');assert.equal(h.sends.length,2);}finally{h.env.DB.prepare=original;}
+  });
+  await test('Mixed, duplicate, missing and unconsented student selections are rejected',async()=>{
+   for(const b of [{student_ids:[students[0]],parent_ids:[parentIds[0]]},{student_ids:[students[0],students[0]]},{student_ids:[]}])assert.equal((await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC INVALID',...b})).status,400);
+   assert.equal((await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC MISSING',student_ids:['9999999']})).status,409);
+   h.sqlite.prepare('UPDATE parents SET consent=0 WHERE id=?').run(parentIds[1]);assert.equal((await h.call('/api/messages/prepare','POST',{text:'SYNTHETIC OPT OUT',student_ids:[students[2]]})).status,409);
+  });
+ }finally{h.sqlite.close();}
+ const DB=openDatabase(),chat='910000000011',other='910000000012';let id=1;const engine=createBotEngine(DB,{port:8787,audience:'all',adminTelegramIds:[chat],publicRegistrationEnabled:true});
+ const send=(text='',extra={})=>{const who=extra.who||chat;const message={chat:{id:Number(who),type:'private'},from:{id:Number(who)},text,...(extra.contact?{contact:extra.contact}:{})};return engine({update_id:id++,...(extra.action?{callback_query:{id:'callback-'+id,from:message.from,message:{chat:message.chat},data:extra.action}}:{message})});};
+ const session=()=>DB.sqlite.prepare('SELECT * FROM bot_sessions WHERE chat_id=?').get(chat);const data=()=>JSON.parse(session().data_json);const choose=p=>send('',{action:p+':'+data().nonce});const last=()=>JSON.parse(DB.sqlite.prepare('SELECT body_json FROM bot_outbox WHERE body_json IS NOT NULL ORDER BY id DESC LIMIT 1').get().body_json).body;
+ try{
+  await test('Parent menu provides registration, children and cancel buttons',()=>{send('/start');const buttons=last().reply_markup.inline_keyboard.flat();assert.deepEqual(buttons.map(b=>b.callback_data),['register','children','cancel']);});
+  await test('Persistent parent keyboard and own-contact button appear after consent',()=>{send('Ro‘yxatdan o‘tish');choose('consent-yes');assert.ok(last().reply_markup.keyboard.flat().some(b=>b.text==='Mening farzandlarim'));send('SYNTHETIC BUTTON PARENT');assert.ok(last().reply_markup.keyboard.flat().some(b=>b.request_contact===true));});
+  await test('Phone contact belonging to another user is rejected; own contact accepted',()=>{send('',{contact:{user_id:Number(other),phone_number:'998000000011'}});assert.equal(session().stage,'phone');send('',{contact:{user_id:Number(chat),phone_number:'998000000011'}});assert.equal(session().stage,'child');});
+  await test('All eleven grades are buttons; stale grade callback cannot advance form',()=>{send('SYNTHETIC BUTTON CHILD');const buttons=last().reply_markup.inline_keyboard.flat();assert.equal(buttons.length,11);send('',{action:'grade_0000000000000000_5'});assert.equal(session().stage,'grade');send('',{action:buttons[4].callback_data});assert.equal(session().stage,'messages');assert.equal(data().grade,5);choose('messages-yes');assert.equal(session(),undefined);});
+  await test('My children button reveals only the requesting parent records',()=>{send('Mening farzandlarim');assert.ok(last().text.includes('SYNTHETIC BUTTON CHILD'));send('Mening farzandlarim',{who:other});assert.ok(!last().text.includes('SYNTHETIC BUTTON CHILD'));});
+  await test('Cancel and stop keyboard buttons clear drafts and revoke consent',()=>{send('Farzand qo‘shish');assert.equal(session().stage,'consent');send('Bekor qilish');assert.equal(session(),undefined);send('Xabarlarni to‘xtatish');assert.equal(DB.sqlite.prepare('SELECT consent FROM parents WHERE telegram_chat_id=?').get(chat).consent,0);});
+ }finally{DB.close();}
+ return n;
+}

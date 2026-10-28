@@ -15,12 +15,13 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
     if(config.audience!=='all'&&!config.adminTelegramIds.map(String).includes(chat))return false;
     let seq=0;
     const queue=(method,body)=>run('INSERT INTO bot_outbox(update_id,seq,body_json) VALUES(?,?,?)',update.update_id,seq++,JSON.stringify({method,body}));
-    const say=(text,rows)=>queue('sendMessage',{chat_id:chat,text,...(rows?{reply_markup:{inline_keyboard:rows}}:{})});
+    const homeKeyboard={keyboard:[[{text:'Ro‘yxatdan o‘tish'},{text:'Farzand qo‘shish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'},{text:'Xabarlarni to‘xtatish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true};
+    const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:markup||(rows?{inline_keyboard:rows}:homeKeyboard)});
     const session=()=>query('SELECT * FROM bot_sessions WHERE chat_id=?',chat);
     const clear=()=>run('DELETE FROM bot_sessions WHERE chat_id=?',chat);
     const save=(stage,data)=>run('INSERT INTO bot_sessions(chat_id,stage,data_json,expires) VALUES(?,?,?,?) ON CONFLICT(chat_id) DO UPDATE SET stage=excluded.stage,data_json=excluded.data_json,expires=excluded.expires',chat,stage,JSON.stringify(data),clock()+1800);
     const choice=(label,key,nonce)=>({text:label,callback_data:key+':'+nonce});
-    const menu=()=>say('MathUP. Ota-ona sifatida ro‘yxatdan o‘tish yoki farzand qo‘shish uchun tugmani bosing. /cancel — bekor qilish; /stop — xabarlar roziligini bekor qilish.',[[{text:'Ota-ona sifatida ro‘yxatdan o‘tish',callback_data:'register'}]]);
+    const menu=()=>say('MathUP. Quyidagi tugmalar orqali ro‘yxatdan o‘ting, farzand qo‘shing yoki ma’lumotlaringizni ko‘ring.',[[{text:'Ro‘yxatdan o‘tish / farzand qo‘shish',callback_data:'register'}],[{text:'Mening farzandlarim',callback_data:'children'}],[{text:'Bekor qilish',callback_data:'cancel'}]]);
     db.exec('BEGIN IMMEDIATE');
     try {
       if(query('SELECT update_id FROM bot_updates WHERE update_id=?',update.update_id)){db.exec('ROLLBACK');return false;}
@@ -28,11 +29,18 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
       run('DELETE FROM bot_sessions WHERE expires<=?',clock());
       if(callback?.id)queue('answerCallbackQuery',{callback_query_id:callback.id});
       const text=typeof m.text==='string'?m.text.trim():'',action=String(callback?.data||'');
-      const command=callback?'':text.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
+      let command=callback?'':text.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
+      const shortcuts={'Ro‘yxatdan o‘tish':'/register','Farzand qo‘shish':'/register','Mening farzandlarim':'/children','Bosh menyu':'/start','Bekor qilish':'/cancel','Xabarlarni to‘xtatish':'/stop'};
+      if(!callback&&shortcuts[text])command=shortcuts[text];if(action==='cancel')command='/cancel';if(action==='children')command='/children';
       if(command==='/cancel'){clear();say('Jarayon bekor qilindi. /register orqali qayta boshlashingiz mumkin.');}
       else if(command==='/stop'){
         clear();run('UPDATE parents SET consent=0,version=version+1,updated_at=? WHERE telegram_chat_id=?',new Date(clock()*1000).toISOString(),chat);
         say('Xabarlar roziligi bekor qilindi. Qayta rozilik berish uchun /register.');
+      }
+      else if(command==='/children') {
+        clear();const parent=query('SELECT id FROM parents WHERE telegram_chat_id=? AND chat_verified=1 AND archived=0',chat);
+        if(!parent)say('Hozircha ro‘yxatdan o‘tmagansiz. Ro‘yxatdan o‘tish tugmasini bosing.');
+        else {const children=db.prepare('SELECT full_name,grade,status FROM students WHERE parent_id=? AND archived=0 ORDER BY id LIMIT 20').all(parent.id);const labels={pending_current:'Tasdiqlash kutilmoqda',current:'O‘qiydi',new_lead:'Yangi murojaat',testing_only:'Faol emas'};say(children.length?'Farzandlaringiz (20 tagacha):\n'+children.map((c,i)=>(i+1)+'. '+c.full_name+' — '+(c.grade?c.grade+'-sinf':'sinf kiritilmagan')+' — '+labels[c.status]).join('\n'):'Hozircha farzand yozuvi yo‘q. Farzand qo‘shish tugmasini bosing.');}
       }
       else if(command==='/admin') {
         if(config.adminTelegramIds.map(String).includes(chat))say(`Admin panelni server ishlayotgan kompyuterda oching: http://127.0.0.1:${config.port}/`);
@@ -75,19 +83,20 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
           else if(matches('consent-yes')){save('parent',{});say('Ota-onaning ism-familiyasini kiriting (120 belgigacha).');}
           else say('Joriy rozilik tugmasini bosing yoki /cancel yuboring.');
         }
-        else if(callback&&s.stage!=='messages')say('Bu tugma eskirgan. Joriy savolga javob yozing.');
+        else if(callback&&!['messages','grade'].includes(s.stage))say('Bu tugma eskirgan. Joriy savolga javob yozing.');
         else if(s.stage==='parent') {
-          const name=clean(text);if(!name)say('Ism-familiyani 1–120 belgi bilan kiriting.');else {save('phone',{name});say('Telefon raqamingizni +998 va 9 ta raqam ko‘rinishida kiriting.');}
+          const name=clean(text);if(!name)say('Ism-familiyani 1–120 belgi bilan kiriting.');else {save('phone',{name});say('Telefon raqamingizni tugma orqali ulashing yoki +998 va 9 ta raqamni yozing.',null,{keyboard:[[{text:'Telefon raqamimni ulashish',request_contact:true}],[{text:'Bekor qilish'}]],resize_keyboard:true,one_time_keyboard:true});}
         }
         else if(s.stage==='phone') {
-          const phone=validPhone(text);if(!phone)say('Telefon formati: +998 va 9 ta raqam.');else {save('child',{...data,phone});say('Farzandingizning ism-familiyasini kiriting (120 belgigacha).');}
+          const ownContact=m.contact&&String(m.contact.user_id)===chat;const supplied=m.contact?(ownContact?String(m.contact.phone_number).replace(/^\+?/,'+'):''):text;const phone=validPhone(supplied);if(!phone)say('Telefon formati: +998 va 9 ta raqam.');else {save('child',{...data,phone});say('Farzandingizning ism-familiyasini kiriting (120 belgigacha).');}
         }
         else if(s.stage==='child') {
-          const child=clean(text);if(!child)say('Farzandingizning ism-familiyasini 1–120 belgi bilan kiriting.');else {save('grade',{...data,child});say('Farzandingiz nechanchi sinfda o‘qiydi? 1–11 oralig‘ida raqam yuboring.');}
+          const child=clean(text);if(!child)say('Farzandingizning ism-familiyasini 1–120 belgi bilan kiriting.');else {const nonce=randomBytes(8).toString('hex');save('grade',{...data,child,nonce});const buttons=Array.from({length:11},(_,i)=>({text:(i+1)+'-sinf',callback_data:'grade_'+nonce+'_'+(i+1)}));say('Farzandingiz sinfini tanlang yoki 1–11 raqamini yozing.',[buttons.slice(0,4),buttons.slice(4,8),buttons.slice(8)]);}
         }
         else if(s.stage==='grade') {
-          if(!/^(?:[1-9]|10|11)$/.test(text))say('Sinfni 1–11 oralig‘ida kiriting.');
-          else {const nonce=randomBytes(8).toString('hex');save('messages',{...data,grade:Number(text),nonce});say('O‘quv markazining Telegram xabarlarini olishga rozimisiz? Rad etsangiz ham ro‘yxatga olinasiz. /stop orqali rozilikni keyin bekor qilishingiz mumkin.',[[choice('Xabarlarni olaman','messages-yes',nonce),choice('Hozircha yo‘q','messages-no',nonce)]]);}
+          const picked=/^grade_([a-f0-9]{16})_([1-9]|10|11)$/.exec(action);const value=callback?(picked&&picked[1]===data.nonce?picked[2]:''):text;
+          if(!/^(?:[1-9]|10|11)$/.test(value))say('Sinfni 1–11 oralig‘ida kiriting.');
+          else {const nonce=randomBytes(8).toString('hex');save('messages',{...data,grade:Number(value),nonce});say('O‘quv markazining Telegram xabarlarini olishga rozimisiz? Rad etsangiz ham ro‘yxatga olinasiz. /stop orqali rozilikni keyin bekor qilishingiz mumkin.',[[choice('Xabarlarni olaman','messages-yes',nonce),choice('Hozircha yo‘q','messages-no',nonce)]]);}
         }
         else if(s.stage==='messages') {
           if(!matches('messages-yes')&&!matches('messages-no'))say('Joriy xabarlar roziligi tugmasini bosing.');
