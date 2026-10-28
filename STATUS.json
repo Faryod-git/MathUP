@@ -1,12 +1,12 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "local_admin": "implemented_and_http_tested",
   "bot_registration": "implemented_mock_tested",
   "test_1_test_2_in_new_bot": "absent",
   "chatplace_original_automations": "unchanged",
-  "synthetic_checks_passed_linux": 86,
-  "synthetic_checks_passed_windows": 87,
-  "ci_result": "pending_for_version_1.2.0",
+  "synthetic_checks_passed_linux": 87,
+  "synthetic_checks_passed_windows": 88,
+  "ci_result": "pending_for_version_1.3.0",
   "demo_process_startup_login_roster": "passed",
   "live_telegram_messages_sent_this_build": 0,
   "live_credentials_used_this_build": false,
@@ -29,5 +29,10 @@
   "separate_message_consent_step": false,
   "stop_button_visible": false,
   "single_signup_notice_includes_course_messages": true,
-  "existing_opt_outs_preserved": true
+  "existing_opt_outs_preserved": true,
+  "icon_buttons": true,
+  "admin_theme": "navy_purple_responsive",
+  "browser_desktop_check": "passed_1440px",
+  "browser_mobile_check": "passed_390px_no_page_overflow",
+  "browser_interactions": "login_student_selection_preview_dialog_passed"
 }

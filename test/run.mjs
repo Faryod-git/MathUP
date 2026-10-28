@@ -1,3 +1,4 @@
+import {plainButtonText} from '../src/button-labels.mjs';
 import {runFeatureSuite} from './features.mjs';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
@@ -97,7 +98,7 @@ try {
       const n=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n;text('/register',{id:'910000000099'});text('/register',{type:'group'});assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n,n);
     });
     await test('Bot has registration menu without TEST 1 or TEST 2',()=>{
-      text('/start');const payload=JSON.parse(DB.sqlite.prepare('SELECT body_json FROM bot_outbox ORDER BY id DESC LIMIT 1').get().body_json);assert.ok(payload.body.reply_markup.keyboard.flat().some(b=>b.text==='Ro‘yxatdan o‘tish'));assert.ok(!JSON.stringify(payload).includes('TEST 1'));assert.ok(!JSON.stringify(payload).includes('TEST 2'));
+      text('/start');const payload=JSON.parse(DB.sqlite.prepare('SELECT body_json FROM bot_outbox ORDER BY id DESC LIMIT 1').get().body_json);assert.ok(payload.body.reply_markup.keyboard.flat().some(b=>plainButtonText(b.text)==='Ro‘yxatdan o‘tish'));assert.ok(!JSON.stringify(payload).includes('TEST 1'));assert.ok(!JSON.stringify(payload).includes('TEST 2'));
     });
     await test('Registration asks consent before names and stores no implicit Telegram name',()=>{
       text('/register');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('PRIVATE'));text('UNCONSENTED NAME');assert.equal(state().stage,'consent');assert.ok(!state().data_json.includes('UNCONSENTED'));choose('consent-yes');assert.equal(state().stage,'parent');

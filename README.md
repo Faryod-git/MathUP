@@ -168,3 +168,7 @@ Ro‘yxatdan o‘tish tugmasi faqat hali ro‘yxatdan o‘tmagan akkauntga ko‘
 ### 1.2.0 — qisqaroq ro‘yxatdan o‘tish
 
 Sinf tanlangach ro‘yxat saqlanadi. Xabarlar uchun alohida savol va xabarlarni to‘xtatish tugmasi menyuda yo‘q. Boshidagi yagona tasdiq ma’lumotlar saqlanishi va o‘quv markazi xabarlari haqida aytadi. Avval xabarlarni rad etgan ota-onaning holati farzand qo‘shilganda avtomatik o‘zgarmaydi. Eski ochiq tasdiqlash oynalari va qo‘lda /stop buyrug‘i moslik uchun ishlashda davom etadi.
+
+### 1.3.0 — yangilangan ko‘rinish
+
+Bot tugmalariga ikonlar qo‘shildi; eski matnli tugmalar ham ishlaydi. Admin va kirish sahifalari to‘q ko‘k/binafsha uslubda yangilandi. Kartochkalar joriy sahifadagi ro‘yxat sonini va tanlangan o‘quvchi/ota-ona sonini ko‘rsatadi. Mobil jadvallar yon tomonga suriladi. Windows Chrome’da 1440px va 390px o‘lchamlarida kirish, tanlash, xabarni oldindan ko‘rish va dialoglar sun’iy ma’lumotlarda tekshirildi.

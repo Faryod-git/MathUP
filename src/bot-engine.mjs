@@ -1,3 +1,4 @@
+import {decorateKeyboard,plainButtonText} from './button-labels.mjs';
 import { createHash, randomBytes } from 'node:crypto';
 const sha=s=>createHash('sha256').update(s).digest('hex');
 const clean=(v,n=120)=>typeof v==='string'&&v.trim().length>0&&v.trim().length<=n&&!/[\u0000-\u001f]/.test(v)?v.trim():null;
@@ -17,7 +18,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
     const queue=(method,body)=>run('INSERT INTO bot_outbox(update_id,seq,body_json) VALUES(?,?,?)',update.update_id,seq++,JSON.stringify({method,body}));
     const registered=()=>!!query('SELECT id FROM parents WHERE telegram_chat_id=? AND chat_verified=1 AND archived=0',chat);
     const homeKeyboard=()=>({keyboard:[[{text:registered()?'Farzand qo‘shish':'Ro‘yxatdan o‘tish'}],[{text:'Mening farzandlarim'},{text:'Bosh menyu'}],[{text:'Bekor qilish'}],...(config.adminTelegramIds.map(String).includes(chat)?[[{text:'/admin'}]]:[])],resize_keyboard:true,is_persistent:true});
-    const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:markup||(rows?{inline_keyboard:rows}:homeKeyboard())});
+    const say=(text,rows,markup)=>queue('sendMessage',{chat_id:chat,text,reply_markup:decorateKeyboard(markup||(rows?{inline_keyboard:rows}:homeKeyboard()))});
     const session=()=>query('SELECT * FROM bot_sessions WHERE chat_id=?',chat);
     const clear=()=>run('DELETE FROM bot_sessions WHERE chat_id=?',chat);
     const save=(stage,data)=>run('INSERT INTO bot_sessions(chat_id,stage,data_json,expires) VALUES(?,?,?,?) ON CONFLICT(chat_id) DO UPDATE SET stage=excluded.stage,data_json=excluded.data_json,expires=excluded.expires',chat,stage,JSON.stringify(data),clock()+1800);
@@ -46,9 +47,10 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
       run('DELETE FROM bot_sessions WHERE expires<=?',clock());
       if(callback?.id)queue('answerCallbackQuery',{callback_query_id:callback.id});
       const text=typeof m.text==='string'?m.text.trim():'',action=String(callback?.data||'');
-      let command=callback?'':text.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
+      const buttonText=plainButtonText(text);
+      let command=callback?'':buttonText.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
       const shortcuts={'Ro‘yxatdan o‘tish':'/register','Farzand qo‘shish':'/register','Mening farzandlarim':'/children','Bosh menyu':'/start','Bekor qilish':'/cancel','Xabarlarni to‘xtatish':'/stop'};
-      if(!callback&&shortcuts[text])command=shortcuts[text];if(action==='cancel')command='/cancel';if(action==='children')command='/children';
+      if(!callback&&shortcuts[buttonText])command=shortcuts[buttonText];if(action==='cancel')command='/cancel';if(action==='children')command='/children';
       if(command==='/cancel'){clear();say('Jarayon bekor qilindi. /register orqali qayta boshlashingiz mumkin.');}
       else if(command==='/stop'){
         clear();run('UPDATE parents SET consent=0,version=version+1,updated_at=? WHERE telegram_chat_id=?',new Date(clock()*1000).toISOString(),chat);
