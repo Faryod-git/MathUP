@@ -242,3 +242,21 @@ O'rnatish: serverni to'xtating, Apply-Update.ps1 -Target ishchi-papka orqali kod
 Testlar ichida aynan Y_I_E 1-qism testlari, Y_I_E 2-qism testlari va Y_I_E 3-qism testlari tugmalari bor. Har bir tugma shu kitobning alohida mavzular bo'limini ochadi. Hozircha mavzu yoki rasm qo'shilmagan; kitobning har bir mavzusi uchun 10 ta savoldan iborat rasmli to'plamlar loyiha egasi yuborgan kontent asosida keyin joylanadi.
 
 Test javoblari ham shu uch kitob bo'yicha ajratilgan. Kitob testlaridan aynan o'sha qismning javoblariga va aksincha o'tish, kitoblar ro'yxatiga qaytish va Bosh menyuga chiqish mumkin. Noto'g'ri yoki mavjud bo'lmagan kitob tugmalari mavzu yoki javob yaratmaydi. Tugallanmagan ro'yxat shakli kitoblarni ko'rishda saqlanadi. Token, baza sxemasi va Telegram profil tavsifini o'zgartirish talab qilinmaydi.
+
+
+### 1.10.0 - mavzular ketma-ketligi va shaxsiy rasmli materiallar
+
+Testlar -> kitob -> mavzu orqali rasm ochiladi. Har sahifada 9 mavzu, raqam bo'yicha tartiblangan. Mavzuning o'zida Javoblar, Oldingi/Keyingi mavzu, Mavzular ro'yxati va Bosh menyu tugmalari bor. Javoblar aynan shu mavzuning 10 ta kaliti va qisqa izohlarini ko'rsatadi. Ota-ona har to'g'ri javobga 1 ball, jami 10 ball hisoblaydi. Bot avtomatik baholamaydi. Materiali yo'q kitob buni ochiq ko'rsatadi.
+
+Kurs materiallari ommaviy GitHub'ga yuklanmaydi. Ular alohida mahalliy yangilash paketidagi `content/practice/catalog.json` va `content/practice/yie-1/topic-01.png` kabi fayllarda saqlanadi. Katalogda har mavzuning book_id, number, title, 10 answers, 10 explanations hamda image.path/image.sha256 maydonlari bor. Rasm PNG bo'lishi, ruxsat etilgan papkada turishi va SHA256 mos kelishi shart. Rasm faqat foydalanuvchi mavzuni tanlaganida Telegram'ga multipart sifatida yuboriladi; ommaviy rasm havolasi kerak emas. Yetkazish natijasi noma'lum bo'lsa qayta yuborilmaydi.
+
+**O'rnatish:** materialli yangilash ZIP'ini alohida papkaga chiqaring. Eski serverni Ctrl+C bilan to'xtating. Yangi paket papkasida PowerShell ochib quyidagilarni bajaring:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Update.ps1 -Target "F:\MathUP-main"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "F:\MathUP-main\Start.ps1" -Bot
+```
+
+Botda /start yuborib, Testlar -> Y_I_E 1-qism testlari tugmalarini oching. Yangilovchi eski kod va almashtiriladigan materiallarni backups/code-* papkasiga saqlaydi. config.json, secrets.dpapi va data bazasi ko'chirilmaydi. Faqat kodli GitHub arxivida materiallar bo'lmaydi; u mavjud mahalliy materiallarni o'chirmaydi. Yangi materiallarni ko'rish uchun server qayta ishga tushishi kerak.
+
+Sinovlar sun'iy katalog va 1x1 PNG ishlatadi; haqiqiy ota-onalarga xabar yuborilmaydi. Windows CI yangilovchining hash/path tekshiruvi, yangi fayllar, rollback va shaxsiy sozlamalar saqlanishini ham tekshiradi. Mahalliy o'rnatish va haqiqiy botda mavzuni ochish foydalanuvchi kompyuterida tekshiriladi.

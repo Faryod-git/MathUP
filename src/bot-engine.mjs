@@ -1,4 +1,5 @@
-import {practiceSection,practiceBook} from './practice-sections.mjs';
+import {PRACTICE_CATALOG} from './practice-catalog.mjs';
+import {practiceSection,practiceBook,practiceTopic} from './practice-sections.mjs';
 import {WELCOME_TEXT,CONTACT_TEXT,CONTACT_ENTITIES,contactButtons} from './bot-content.mjs';
 import {decorateKeyboard,plainButtonText} from './button-labels.mjs';
 import { createHash, randomBytes } from 'node:crypto';
@@ -8,7 +9,7 @@ const validPhone=v=>{const p=String(v||'').replace(/[\s()-]/g,'');return /^\+998
 
 // Pure synchronous state machine: SQLite and a transactional reply queue only.
 // Network calls belong exclusively to poller.mjs.
-export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)}={}) {
+export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000),practiceCatalog=PRACTICE_CATALOG}={}) {
   const db=DB.sqlite,query=(sql,...v)=>db.prepare(sql).get(...v),run=(sql,...v)=>db.prepare(sql).run(...v);
   return function processUpdate(update) {
     if(!Number.isSafeInteger(update?.update_id))return false;
@@ -64,7 +65,8 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
       run('DELETE FROM bot_sessions WHERE expires<=?',clock());
       if(callback?.id)queue('answerCallbackQuery',{callback_query_id:callback.id});
       const text=typeof m.text==='string'?m.text.trim():'',action=String(callback?.data||'');
-      const practiceBookAction=/^practice:(tests|answers):book:([123])$/.exec(action);
+      const practiceBookAction=/^practice:(tests|answers):book:([123])(?::page:(0|[1-9]\d{0,2}))?$/.exec(action);
+      const practiceTopicAction=/^practice:(tests|answers):topic:([123]):([1-9]\d{0,2})$/.exec(action);
       const buttonText=plainButtonText(text);
       let command=callback?'':buttonText.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
       const shortcuts={'Ro‘yxatdan o‘tish':'/register','Farzand qo‘shish':'/register','Mening farzandlarim':'/children','Bosh menyu':'/start','Bog‘lanish':'/contact','Testlar':'/tests','Test javoblari':'/answers','Bekor qilish':'/cancel','Xabarlarni to‘xtatish':'/stop'};
@@ -74,7 +76,13 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
         clear();run('UPDATE parents SET consent=0,version=version+1,updated_at=? WHERE telegram_chat_id=?',new Date(clock()*1000).toISOString(),chat);
         say('Xabarlar bo‘yicha ma’muriyatga murojaat qiling. Telegram xabarlarini to‘xtatish uchun botni bloklashingiz mumkin.');
       }
-      else if(practiceBookAction){const section=practiceBook(practiceBookAction[1],practiceBookAction[2]);say(section.text,section.rows);}
+      else if(practiceBookAction){const section=practiceBook(practiceBookAction[1],practiceBookAction[2],Number(practiceBookAction[3]||0),practiceCatalog);say(section.text,section.rows);}
+      else if(practiceTopicAction){
+        const section=practiceTopic(practiceTopicAction[1],practiceTopicAction[2],Number(practiceTopicAction[3]),practiceCatalog);
+        if(section.photo)queue('sendPhoto',{chat_id:chat,photo:section.photo,caption:section.text,reply_markup:decorateKeyboard({inline_keyboard:section.rows})});
+        else say(section.text,section.rows);
+      }
+      else if(action.startsWith('practice:')&&!['practice:tests','practice:answers','practice:home'].includes(action))say('Mavzu yoki sahifa topilmadi. Kitobni qayta tanlang.',practiceSection('tests').rows);
       else if(command==='/tests'||command==='/answers'){const section=practiceSection(command==='/tests'?'tests':'answers');say(section.text,section.rows);}
       else if(command==='/contact') {queue('sendMessage',{chat_id:chat,text:CONTACT_TEXT,entities:CONTACT_ENTITIES,reply_markup:{inline_keyboard:contactButtons()}});}
       else if(command==='/children') {

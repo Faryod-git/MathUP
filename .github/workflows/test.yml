@@ -23,3 +23,7 @@ jobs:
             [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$parseErrors)
             if ($parseErrors) { throw ($parseErrors | Out-String) }
           }
+      - name: Verify Windows updater with synthetic private content
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./test/windows-update.ps1

@@ -13,3 +13,6 @@ questions.json
 *.zip
 *.pem
 *.key
+
+content/practice/
+practice-content-manifest.json

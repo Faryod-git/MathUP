@@ -1,14 +1,24 @@
+import {readPracticeImage,PRACTICE_CONTENT_ROOT} from './practice-catalog.mjs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createBotEngine } from './bot-engine.mjs';
 import {flushBroadcasts,recoverBroadcasts} from './broadcast.mjs';
 
-export function telegramApi(token,net=fetch) {
-  const methods=new Set(['getMe','getWebhookInfo','getUpdates','sendMessage','answerCallbackQuery']);
+export function telegramApi(token,net=fetch,{practiceRoot=PRACTICE_CONTENT_ROOT}={}) {
+  const methods=new Set(['getMe','getWebhookInfo','getUpdates','sendMessage','sendPhoto','answerCallbackQuery']);
   return async(method,body={},signal)=>{
     if(!methods.has(method))throw Error('Telegram usuli ruxsat etilmagan');
+    let requestBody=JSON.stringify(body),headers={'Content-Type':'application/json'};
+    if(method==='sendPhoto'){
+      const match=/^practice:(yie-[123]\/topic-[0-9]{2,3}\.png):([a-f0-9]{64})$/.exec(body.photo||'');
+      let bytes;
+      try{if(!match)throw Error('Invalid practice reference');bytes=readPracticeImage(match[1],match[2],practiceRoot);}catch{throw Object.assign(Error('Test rasmi mavjud emas yoki tekshiruvdan o‘tmadi'),{rejected:true,code:400});}
+      requestBody=new FormData();
+      for(const [key,value] of Object.entries(body))if(key!=='photo'&&value!==undefined)requestBody.append(key,typeof value==='object'?JSON.stringify(value):String(value));
+      requestBody.append('photo',new Blob([bytes],{type:'image/png'}),match[1].split('/').at(-1));headers={};
+    }
     let response,data;
     try {
-      response=await net('https://api.telegram.org/bot'+token+'/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(40000)]):AbortSignal.timeout(40000)});
+      response=await net('https://api.telegram.org/bot'+token+'/'+method,{method:'POST',headers,body:requestBody,signal:signal?AbortSignal.any([signal,AbortSignal.timeout(40000)]):AbortSignal.timeout(40000)});
       data=await response.json();
     }catch{throw Object.assign(Error('Telegram bilan aloqa uzildi; natija noma’lum'),{uncertain:true});}
     if(!response.ok||data.ok!==true)throw Object.assign(Error('Telegram so‘rovni qabul qilmadi'),{rejected:data.ok===false,code:Number(data.error_code)||response.status,retryAfter:Number(data.parameters?.retry_after)||0});
