@@ -1,4 +1,4 @@
-import {practiceSection} from './practice-sections.mjs';
+import {practiceSection,practiceBook} from './practice-sections.mjs';
 import {WELCOME_TEXT,CONTACT_TEXT,CONTACT_ENTITIES,contactButtons} from './bot-content.mjs';
 import {decorateKeyboard,plainButtonText} from './button-labels.mjs';
 import { createHash, randomBytes } from 'node:crypto';
@@ -64,6 +64,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
       run('DELETE FROM bot_sessions WHERE expires<=?',clock());
       if(callback?.id)queue('answerCallbackQuery',{callback_query_id:callback.id});
       const text=typeof m.text==='string'?m.text.trim():'',action=String(callback?.data||'');
+      const practiceBookAction=/^practice:(tests|answers):book:([123])$/.exec(action);
       const buttonText=plainButtonText(text);
       let command=callback?'':buttonText.split(/\s+/)[0].replace(/@[A-Za-z0-9_]+$/,'').toLowerCase();
       const shortcuts={'Ro‘yxatdan o‘tish':'/register','Farzand qo‘shish':'/register','Mening farzandlarim':'/children','Bosh menyu':'/start','Bog‘lanish':'/contact','Testlar':'/tests','Test javoblari':'/answers','Bekor qilish':'/cancel','Xabarlarni to‘xtatish':'/stop'};
@@ -73,6 +74,7 @@ export function createBotEngine(DB,config,{clock=()=>Math.floor(Date.now()/1000)
         clear();run('UPDATE parents SET consent=0,version=version+1,updated_at=? WHERE telegram_chat_id=?',new Date(clock()*1000).toISOString(),chat);
         say('Xabarlar bo‘yicha ma’muriyatga murojaat qiling. Telegram xabarlarini to‘xtatish uchun botni bloklashingiz mumkin.');
       }
+      else if(practiceBookAction){const section=practiceBook(practiceBookAction[1],practiceBookAction[2]);say(section.text,section.rows);}
       else if(command==='/tests'||command==='/answers'){const section=practiceSection(command==='/tests'?'tests':'answers');say(section.text,section.rows);}
       else if(command==='/contact') {queue('sendMessage',{chat_id:chat,text:CONTACT_TEXT,entities:CONTACT_ENTITIES,reply_markup:{inline_keyboard:contactButtons()}});}
       else if(command==='/children') {

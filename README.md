@@ -236,3 +236,9 @@ Botning asosiy klaviaturasiga Testlar va Test javoblari bo'limlari qo'shildi. /t
 Hozir faqat bo'limlar va ularning tushuntirishlari tayyor. Har mavzu uchun 10 ta savoldan iborat bitta test rasmi va unga mos javoblarni loyiha egasi keyin yuboradi. Hozircha rasm, uydirma savol yoki javob kaliti joylashtirilmagan; avtomatik ball hisoblash qo'shilmagan. Bo'limlar materiallar hali yuklanmaganini aniq bildiradi. Mavzular ro'yxati va rasmli materiallar keyingi bosqichda berilgan kontent asosida joylanadi.
 
 O'rnatish: serverni to'xtating, Apply-Update.ps1 -Target ishchi-papka orqali kodni yangilang, Start.ps1 -Bot ni ishga tushiring va botda /start yuboring. Yangi baza migratsiyasi yoki token o'zgarishi talab qilinmaydi. ChatPlace'dagi avvalgi TEST 1/TEST 2 avtomatizatsiyalari o'zgartirilmaydi.
+
+### 1.9.0 - Y_I_E kitoblari bo'yicha bo'limlar
+
+Testlar ichida aynan Y_I_E 1-qism testlari, Y_I_E 2-qism testlari va Y_I_E 3-qism testlari tugmalari bor. Har bir tugma shu kitobning alohida mavzular bo'limini ochadi. Hozircha mavzu yoki rasm qo'shilmagan; kitobning har bir mavzusi uchun 10 ta savoldan iborat rasmli to'plamlar loyiha egasi yuborgan kontent asosida keyin joylanadi.
+
+Test javoblari ham shu uch kitob bo'yicha ajratilgan. Kitob testlaridan aynan o'sha qismning javoblariga va aksincha o'tish, kitoblar ro'yxatiga qaytish va Bosh menyuga chiqish mumkin. Noto'g'ri yoki mavjud bo'lmagan kitob tugmalari mavzu yoki javob yaratmaydi. Tugallanmagan ro'yxat shakli kitoblarni ko'rishda saqlanadi. Token, baza sxemasi va Telegram profil tavsifini o'zgartirish talab qilinmaydi.

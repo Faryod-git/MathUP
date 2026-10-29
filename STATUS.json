@@ -1,5 +1,5 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "student_deletion": "physical_version_checked_transaction",
   "last_child_deletes_parent": true,
   "siblings_preserve_parent": true,
@@ -21,8 +21,8 @@
   "broadcast_unknown_delivery_retry": false,
   "broadcast_text_retention": "only_until_queue_completion",
   "local_delivery_requires_legacy_consent": false,
-  "synthetic_checks_passed_windows": 151,
-  "synthetic_checks_expected_linux": 150,
+  "synthetic_checks_passed_windows": 155,
+  "synthetic_checks_expected_linux": 154,
   "browser_desktop": "passed_1440px",
   "browser_mobile": "passed_390px_no_page_overflow",
   "browser_broadcast": "cancel_confirmation_queue_3_mock_deliveries_passed",
@@ -34,7 +34,7 @@
   "chatplace_original_automations": "unchanged",
   "test_1_test_2_in_new_bot": "absent",
   "windows_installation": "manual_apply_update_then_restart_required",
-  "ci_result": "pending_for_version_1.8.0",
+  "ci_result": "pending_for_version_1.9.0",
   "requirements": [
     "Windows Node.js 24.13+",
     "Existing private configuration",
@@ -70,10 +70,16 @@
     "tests",
     "answers"
   ],
-  "practice_content": "empty_awaiting_owner_topic_images_and_answer_keys",
+  "practice_content": "empty_book_sections_awaiting_owner_topic_images_and_answer_keys",
   "practice_questions_per_topic": 10,
   "practice_format": "one_image_per_ten_question_set",
   "practice_automatic_scoring": false,
   "practice_registration_required": false,
-  "practice_preserves_unfinished_registration": true
+  "practice_preserves_unfinished_registration": true,
+  "practice_books": [
+    "Y_I_E 1-qism",
+    "Y_I_E 2-qism",
+    "Y_I_E 3-qism"
+  ],
+  "practice_book_navigation": "tests_answers_same_part_back_to_books_home"
 }

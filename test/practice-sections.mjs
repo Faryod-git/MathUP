@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {openDatabase} from '../src/database.mjs';
 import {createBotEngine} from '../src/bot-engine.mjs';
 import {plainButtonText} from '../src/button-labels.mjs';
-import {PRACTICE_TESTS_TEXT,PRACTICE_ANSWERS_TEXT,practiceSection} from '../src/practice-sections.mjs';
+import {PRACTICE_TESTS_TEXT,PRACTICE_ANSWERS_TEXT,PRACTICE_BOOKS,practiceSection,practiceBook} from '../src/practice-sections.mjs';
 import {flushOutbox} from '../src/poller.mjs';
 
 export async function runPracticeSectionsSuite(){
@@ -37,6 +37,18 @@ export async function runPracticeSectionsSuite(){
   await test('Duplicate section callbacks are acknowledged and replied to only once',()=>{
    const u=callback('practice:tests');assert.equal(engine(u),true);const count=DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n;assert.equal(engine(u),false);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox').get().n,count);
    const methods=DB.sqlite.prepare('SELECT body_json FROM bot_outbox WHERE update_id=? ORDER BY seq').all(u.update_id).map(r=>JSON.parse(r.body_json).method);assert.deepEqual(methods,['answerCallbackQuery','sendMessage']);
+  });
+  await test('Tests offers exactly the three requested Y_I_E book buttons in part order',()=>{
+   send('/tests');const buttons=last().reply_markup.inline_keyboard.flat().filter(b=>b.callback_data.includes(':book:'));assert.deepEqual(buttons.map(b=>b.text),['Y_I_E 1-qism testlari','Y_I_E 2-qism testlari','Y_I_E 3-qism testlari']);assert.deepEqual(buttons.map(b=>b.callback_data),['practice:tests:book:1','practice:tests:book:2','practice:tests:book:3']);assert.equal(PRACTICE_BOOKS.length,3);
+  });
+  await test('Each book opens its own honest empty topic section without discarding a registration draft',()=>{
+   send('/register');const before=session();for(const part of [1,2,3]){engine(callback('practice:tests:book:'+part));assert.equal(last().text,practiceBook('tests',part).text);assert.ok(last().text.startsWith('📘 Y_I_E '+part+'-qism testlari'));assert.ok(last().text.includes('10 tadan test'));assert.ok(last().text.includes('mavzular va test rasmlari joylanmagan'));assert.deepEqual(session(),before);assert.ok(last().reply_markup.inline_keyboard.flat().some(b=>b.callback_data==='practice:answers:book:'+part));}
+  });
+  await test('Book answers stay matched to the same part and support returning to the book list and home',()=>{
+   for(const part of [1,2,3]){engine(callback('practice:answers:book:'+part));assert.equal(last().text,practiceBook('answers',part).text);assert.ok(last().reply_markup.inline_keyboard.flat().some(b=>b.callback_data==='practice:tests:book:'+part));engine(callback('practice:answers'));const keys=last().reply_markup.inline_keyboard.flat();assert.equal(keys.filter(b=>b.callback_data.includes(':book:')).length,3);assert.equal(keys[part-1].text,'Y_I_E '+part+'-qism javoblari');}engine(callback('practice:home'));assert.ok(last().reply_markup.keyboard.flat().some(b=>b.text==='📝 Testlar'));
+  });
+  await test('Invalid book callbacks cannot expose fabricated content or advance registration; payloads fit Telegram limits',()=>{
+   send('/register');const before=session();for(const value of ['0','4','01','999','1:other']){engine(callback('practice:tests:book:'+value));assert.deepEqual(session(),before);assert.ok(!last().text.includes('qism testlari'));}assert.throws(()=>practiceBook('tests',4));assert.throws(()=>practiceBook('other',1));for(const kind of ['tests','answers'])for(const part of [1,2,3])for(const b of practiceBook(kind,part).rows.flat())assert.ok(Buffer.byteLength(b.callback_data)<=64);
   });
   await test('Empty sections deliver text and navigation only through the mocked outbox, with no images or scoring',async()=>{
    const methods=[];await flushOutbox(DB,async(method)=>{methods.push(method);return true;});assert.ok(methods.length>0);assert.ok(methods.every(m=>['sendMessage','answerCallbackQuery'].includes(m)));assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM students').get().n,0);assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM bot_outbox WHERE body_json IS NOT NULL').get().n,0);

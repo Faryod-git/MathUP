@@ -31,5 +31,5 @@ try {
   foreach ($relative in $replaced) { $saved = Join-Path $backup $relative; if (Test-Path -LiteralPath $saved) { Copy-Item -LiteralPath $saved -Destination (Join-Path $targetRoot $relative) -Force } }
   throw
 }
-Write-Output 'MathUP 1.8 source files updated. Config, credentials and database were not copied or changed.'
+Write-Output 'MathUP 1.9 source files updated. Config, credentials and database were not copied or changed.'
 Write-Output 'Restart the existing server with Ctrl+C, then Start.ps1 -Bot. Refresh browser with Ctrl+F5.'
