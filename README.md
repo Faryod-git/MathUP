@@ -220,3 +220,11 @@ O'quvchilar jadvalida Guruhlar ustuni va guruh filtri bor. Guruhsiz o'quvchilarn
 Guruhdagi Xabar uchun tanlash tugmasi shu guruhdagi Telegram bog'langan ota-onalarning farzandlarini tanlaydi va oldingi xabar tanlovini almashtiradi. Keyin matn yozib Qabul qiluvchilarni tekshirish orqali aniq ismlarni ko'ring va yuborishni tasdiqlang. Bir oilaga bitta xabar. Bog'lanmagan ota-onalar soni ko'rsatiladi va ular tanlanmaydi. Avvalgi 100 o'quvchi / 20 ota-ona chegarasi saqlanadi; katta guruhni filtrlab, qo'lda qisman tanlash mumkin. Hech qanday xabar faqat guruhni yaratish yoki o'quvchi qo'shish bilan avtomatik yuborilmaydi.
 
 Guruhga a'zolik o'zgarsa, o'sha o'quvchining versiyasi ham o'zgaradi; avvalgi xabar tasdig'i eskiradi. Baza qayta ochilganda guruhlar va a'zolik saqlanadi. Yangilash mavjud bazaga faqat yangi guruh jadvallarini qo'shadi; haqiqiy o'quvchilar hech bir guruhga avtomatik joylanmaydi.
+
+### 1.7.0 - bog'lanish va bot haqida
+
+Botning asosiy menyusida Bog'lanish tugmasi bor. Unda Tel: +998 88 729 66 67, Telegram kanal: @MathUP_Course_Gallaorol va Telegram guruh: @MathUP_Gallaorol ko'rsatiladi. Telefon raqami Telegram phone_number entity sifatida yuboriladi; kanal va guruh alohida HTTPS tugmalar bilan ochiladi. /contact buyrug'i ham ishlaydi. Aloqani ochish tugallanmagan ro'yxat shaklini o'chirmaydi. Ro'yxatdan o'tgan ota-onalar klaviaturasida ham tugma bor. Eski klaviaturani yangilash uchun /start yuboring.
+
+/start va /help matni bot nimalar qila olishini tushuntiradi: ota-ona va farzandni ro'yxatga olish, farzandlarning o'qish holatini ko'rish, markaz xabarlarini olish va bog'lanish. TEST 1/TEST 2 funksiyalari reklama qilinmaydi.
+
+Telegram'ning START bosilishidan oldingi tavsifi va profilning qisqa tavsifini alohida sozlash uchun o'rnatilgan loyiha papkasida node scripts/configure-bot-profile.mjs --apply bajariladi. Faqat ko'rish uchun --apply ni yozmang. Skript tokenni Windows DPAPI'dan xotiraga oladi, bot nomini tekshiradi, avvalgi ommaviy profil matnini backups/ ga saqlaydi, standart va o'zbekcha tavsifni o'rnatib qayta tekshiradi. Xabar yubormaydi, token yoki webhook'ni o'zgartirmaydi. Profil matni har bir server ishga tushishida avtomatik almashtirilmaydi.

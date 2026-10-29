@@ -6,6 +6,7 @@ const labels = {
   'Bekor qilish':'✖️ Bekor qilish',
   'Telefon raqamimni ulashish':'📱 Telefon raqamimni ulashish',
   'Roziman':'✅ Roziman',
+  'Bog‘lanish':'📞 Bog‘lanish',
   '/admin':'⚙️ Admin panel'
 };
 export function decorateButtonLabel(text){return labels[text]||(/^(?:[1-9]|10|11)-sinf$/.test(text)?'📘 '+text:text);}

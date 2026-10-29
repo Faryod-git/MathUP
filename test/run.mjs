@@ -1,6 +1,7 @@
 import {runDeletionSuite} from './deletion.mjs';
 import {runBroadcastSuite} from './broadcast.mjs';
 import {runGroupsSuite} from './groups.mjs';
+import {runBotContentSuite} from './bot-content.mjs';
 import {plainButtonText} from '../src/button-labels.mjs';
 import {runFeatureSuite} from './features.mjs';
 import assert from 'node:assert/strict';
@@ -25,6 +26,7 @@ const added=await runFeatureSuite();passed+=added;
 passed+=await runDeletionSuite();
 passed+=await runBroadcastSuite();
 passed+=await runGroupsSuite();
+passed+=await runBotContentSuite();
 const legacy=await runSuite();passed+=legacy.passed;console.log(`PASS ${legacy.passed} existing API regression cases (mock Telegram only)`);
 const dir=mkdtempSync(join(tmpdir(),'mathup-tests-'));
 const record=passwordRecord('Synthetic-password-2026');
