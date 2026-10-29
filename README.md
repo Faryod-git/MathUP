@@ -210,3 +210,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Startup.ps1 -B
 Installer boshqa papkada bo'lsa, -ProjectPath "F:\MathUP-main" orqali ishchi loyihani ko'rsating. Dastur Windows Startup ichiga faqat MathUP Local.lnk yorlig'ini qo'shadi yoki yangilaydi. Hozir yangi serverni ishga tushirmaydi; keyingi Windows kirishida Start.ps1 -Bot bajariladi. ExecutionPolicy Bypass faqat yangi jarayonga tegishli, kompyuterning doimiy siyosati o'zgarmaydi. Windows hisobi ochilmasdan oldin ishlaydigan xizmat o'rnatilmaydi. Kompyuter uyquda yoki o'chirilgan bo'lsa bot ishlamaydi.
 
 Bekor qilish: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-Startup.ps1. Ishlab turgan server bu bilan to'xtamaydi.
+
+### 1.6.0 - o'quv guruhlari
+
+Admin panelda Guruhlar bo'limi qo'shildi. Yangi guruh nomini o'zingiz kiriting (masalan, 5-sinf ertalab). O'quvchilarni boshqarish tugmasi barcha mavjud o'quvchilarni qidirish, sahifalash, guruhga qo'shish yoki chiqarish imkonini beradi. Kataklarni belgilang yoki olib tashlang va O'zgarishlarni saqlash tugmasini bosing. Saqlanmagan o'zgarish borida sahifalash bloklanadi. Telegram akkaunti bog'lanmagan o'quvchini ham guruhga qo'shish mumkin. Bir o'quvchi bir nechta guruhda turishi mumkin.
+
+O'quvchilar jadvalida Guruhlar ustuni va guruh filtri bor. Guruhsiz o'quvchilarni ham alohida ko'rish mumkin. Guruh nomini o'zgartirish va guruhni o'chirish alohida amallar. Guruh o'chirilsa yoki o'quvchi guruhdan chiqarilsa, o'quvchi va ota-ona yozuvi saqlanadi. O'quvchini bazadan o'chirish avvalgidek alohida tasdiqlanadi.
+
+Guruhdagi Xabar uchun tanlash tugmasi shu guruhdagi Telegram bog'langan ota-onalarning farzandlarini tanlaydi va oldingi xabar tanlovini almashtiradi. Keyin matn yozib Qabul qiluvchilarni tekshirish orqali aniq ismlarni ko'ring va yuborishni tasdiqlang. Bir oilaga bitta xabar. Bog'lanmagan ota-onalar soni ko'rsatiladi va ular tanlanmaydi. Avvalgi 100 o'quvchi / 20 ota-ona chegarasi saqlanadi; katta guruhni filtrlab, qo'lda qisman tanlash mumkin. Hech qanday xabar faqat guruhni yaratish yoki o'quvchi qo'shish bilan avtomatik yuborilmaydi.
+
+Guruhga a'zolik o'zgarsa, o'sha o'quvchining versiyasi ham o'zgaradi; avvalgi xabar tasdig'i eskiradi. Baza qayta ochilganda guruhlar va a'zolik saqlanadi. Yangilash mavjud bazaga faqat yangi guruh jadvallarini qo'shadi; haqiqiy o'quvchilar hech bir guruhga avtomatik joylanmaydi.

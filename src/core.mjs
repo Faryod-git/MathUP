@@ -121,8 +121,15 @@ export function createWorker(net=fetch,authorize=authenticate){return {async fet
    let where='s.archived=0 AND p.archived=0',args=[];
    if(q){where+=' AND (instr(lower(s.full_name),lower(?))>0 OR instr(lower(p.display_name),lower(?))>0 OR instr(p.phone,?)>0)';args.push(q,q,q)}
    if(filter){where+=' AND s.status=?';args.push(status(filter))}
+   let groupFields='';
+   if(env.LOCAL_MODE&&env.GROUPS_ENABLED){
+    const gid=url.searchParams.get('group_id')||'';
+    if(gid==='none')where+=' AND NOT EXISTS(SELECT 1 FROM student_group_members gm WHERE gm.student_id=s.id)';
+    else if(gid){if(!/^[1-9]\d{0,12}$/.test(gid))fail(400,'Guruh noto‘g‘ri');if(!await first(env,'SELECT id FROM student_groups_catalog WHERE id=?',gid))fail(404,'Guruh topilmadi');where+=' AND EXISTS(SELECT 1 FROM student_group_members gm WHERE gm.student_id=s.id AND gm.group_id=?)';args.push(gid);}
+    groupFields=",(SELECT json_group_array(json_object('id',CAST(g.id AS TEXT),'name',g.name)) FROM student_group_members gm JOIN student_groups_catalog g ON g.id=gm.group_id WHERE gm.student_id=s.id) AS groups_json";
+   }
    const offset=Math.max(0,Math.min(Math.floor(Number(url.searchParams.get('offset'))||0),100000));
-   return json({items:await all(env,'SELECT s.*,(SELECT COUNT(*) FROM students family WHERE family.parent_id=s.parent_id) AS parent_student_count,p.display_name AS parent_name,p.telegram_chat_id AS parent_telegram_id,p.chat_verified AS parent_chat_verified,p.consent AS parent_consent FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
+   return json({items:await all(env,'SELECT s.*,(SELECT COUNT(*) FROM students family WHERE family.parent_id=s.parent_id) AS parent_student_count,p.display_name AS parent_name,p.telegram_chat_id AS parent_telegram_id,p.chat_verified AS parent_chat_verified,p.consent AS parent_consent'+groupFields+' FROM students s JOIN parents p ON p.id=s.parent_id WHERE '+where+' ORDER BY s.created_at DESC,s.id LIMIT 51 OFFSET ?',...args,offset)});
   }
   if(path==='/api/students'&&method==='POST'){
    await parent(env,b.parent_id);const n=stamp();const result=await first(env,'INSERT INTO students(parent_id,full_name,grade,status,created_at,updated_at) VALUES(?,?,?,?,?,?) RETURNING id',b.parent_id,text(b.full_name),grade(b.grade),status(b.status||'pending'),n,n);return json(result,201);

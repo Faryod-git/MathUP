@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "student_deletion": "physical_version_checked_transaction",
   "last_child_deletes_parent": true,
   "siblings_preserve_parent": true,
@@ -21,8 +21,8 @@
   "broadcast_unknown_delivery_retry": false,
   "broadcast_text_retention": "only_until_queue_completion",
   "local_delivery_requires_legacy_consent": false,
-  "synthetic_checks_passed_windows": 117,
-  "synthetic_checks_expected_linux": 116,
+  "synthetic_checks_passed_windows": 133,
+  "synthetic_checks_expected_linux": 132,
   "browser_desktop": "passed_1440px",
   "browser_mobile": "passed_390px_no_page_overflow",
   "browser_broadcast": "cancel_confirmation_queue_3_mock_deliveries_passed",
@@ -34,7 +34,7 @@
   "chatplace_original_automations": "unchanged",
   "test_1_test_2_in_new_bot": "absent",
   "windows_installation": "manual_apply_update_then_restart_required",
-  "ci_result": "pending_for_version_1.5.0",
+  "ci_result": "pending_for_version_1.6.0",
   "requirements": [
     "Windows Node.js 24.13+",
     "Existing private configuration",
@@ -42,5 +42,19 @@
     "Remote admin needs separately secured HTTPS; admin remains loopback only"
   ],
   "windows_startup": "installer_verified_with_bot_hidden_process_execution_policy_and_explicit_project_path",
-  "startup_installation": "requires_user_run_on_windows_startup_folder"
+  "startup_installation": "requires_user_run_on_windows_startup_folder",
+  "student_groups": "custom_names_versioned_membership_multi_group",
+  "group_operations": [
+    "create",
+    "rename",
+    "delete_group_preserving_students",
+    "add_and_remove_members",
+    "search_and_pagination",
+    "roster_filter",
+    "unassigned_filter",
+    "message_selection"
+  ],
+  "membership_changes_invalidate_old_message_preview": true,
+  "existing_records_automatically_grouped": false,
+  "browser_groups": "create_rename_multi_group_membership_unlinked_assignment_filter_selection_remove_delete_passed"
 }
