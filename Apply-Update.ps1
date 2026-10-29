@@ -5,7 +5,7 @@ $targetRoot = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $Target).Path)
 if ($sourceRoot -eq $targetRoot) { throw 'Source and target must be different folders.' }
 $package = Get-Content -LiteralPath (Join-Path $targetRoot 'package.json') -Raw | ConvertFrom-Json
 if ($package.name -ne 'mathup-local') { throw 'Target is not MathUP Local.' }
-$files = @('src\core.mjs','src\ui.mjs','src\bot-engine.mjs','src\student-selection.mjs','src\server.mjs','src\admin-design.mjs','src\button-labels.mjs','src\database.mjs','src\poller.mjs','src\local-data.mjs','src\broadcast.mjs','src\broadcast-ui.mjs','test\features.mjs','test\deletion.mjs','test\broadcast.mjs','test\run.mjs','README.md','STATUS.json','package.json')
+$files = @('src\core.mjs','src\ui.mjs','src\bot-engine.mjs','src\student-selection.mjs','src\server.mjs','src\admin-design.mjs','src\button-labels.mjs','src\database.mjs','src\poller.mjs','src\local-data.mjs','src\broadcast.mjs','src\broadcast-ui.mjs','test\features.mjs','test\deletion.mjs','test\broadcast.mjs','test\run.mjs','Install-Startup.ps1','README.md','STATUS.json','package.json')
 $manifest = Get-Content -LiteralPath (Join-Path $sourceRoot 'update-manifest.json') -Raw | ConvertFrom-Json
 foreach ($relative in $files) {
   $source = [IO.Path]::GetFullPath((Join-Path $sourceRoot $relative))

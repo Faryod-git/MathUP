@@ -200,3 +200,13 @@ Kompyuter, internet va Start.ps1 -Bot ishlab turishi kerak. Oddiy Start.ps1 bila
 Yangi foydalanuvchilar botga birinchi yozishidan boshlab hisoblanadi; Telegram ism va username avtomatik ko'chirilmaydi. Avvaldan bazadagi tasdiqlangan ota-onalarning Telegram ID'lari bir marta shu mahalliy bazada ro'yxatga olinadi. Eski ro'yxatdan o'tmagan foydalanuvchilar qayta /start yuborishi kerak. ChatPlace yoki Telegram'dan eski foydalanuvchilarni ommaviy olish bajarilmaydi. Audience admins bo'lsa faqat admin akkauntlari kuzatiladi; hammaga ishlashi uchun o'zingiz sozlagan audience all bo'lishi kerak.
 
 Yangilash: serverni Ctrl+C bilan to'xtating, ushbu paketdagi Apply-Update.ps1 -Target eski-papka buyrug'ini bajaring, keyin Start.ps1 -Bot va brauzerda Ctrl+F5. Updater config.json, secrets.dpapi yoki data/ ni ko'chirmaydi. Dastur keyingi ochilganda mavjud SQLite ichida bot foydalanuvchilari va xabar navbati uchun yangi jadvallarni qo'shadi.
+
+### Windows Startup
+
+Admin panel va botni shu Windows foydalanuvchisi tizimga kirishi bilan yashirin ishga tushirish uchun yangi PowerShell oynasida bir marta bajaring:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Startup.ps1 -Bot
+
+Installer boshqa papkada bo'lsa, -ProjectPath "F:\MathUP-main" orqali ishchi loyihani ko'rsating. Dastur Windows Startup ichiga faqat MathUP Local.lnk yorlig'ini qo'shadi yoki yangilaydi. Hozir yangi serverni ishga tushirmaydi; keyingi Windows kirishida Start.ps1 -Bot bajariladi. ExecutionPolicy Bypass faqat yangi jarayonga tegishli, kompyuterning doimiy siyosati o'zgarmaydi. Windows hisobi ochilmasdan oldin ishlaydigan xizmat o'rnatilmaydi. Kompyuter uyquda yoki o'chirilgan bo'lsa bot ishlamaydi.
+
+Bekor qilish: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-Startup.ps1. Ishlab turgan server bu bilan to'xtamaydi.

@@ -40,5 +40,7 @@
     "Existing private configuration",
     "Start.ps1 -Bot running for queued delivery",
     "Remote admin needs separately secured HTTPS; admin remains loopback only"
-  ]
+  ],
+  "windows_startup": "installer_verified_with_bot_hidden_process_execution_policy_and_explicit_project_path",
+  "startup_installation": "requires_user_run_on_windows_startup_folder"
 }
