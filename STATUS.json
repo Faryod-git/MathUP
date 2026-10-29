@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "student_deletion": "physical_version_checked_transaction",
   "last_child_deletes_parent": true,
   "siblings_preserve_parent": true,
@@ -21,20 +21,20 @@
   "broadcast_unknown_delivery_retry": false,
   "broadcast_text_retention": "only_until_queue_completion",
   "local_delivery_requires_legacy_consent": false,
-  "synthetic_checks_passed_windows": 143,
-  "synthetic_checks_expected_linux": 142,
+  "synthetic_checks_passed_windows": 151,
+  "synthetic_checks_expected_linux": 150,
   "browser_desktop": "passed_1440px",
   "browser_mobile": "passed_390px_no_page_overflow",
   "browser_broadcast": "cancel_confirmation_queue_3_mock_deliveries_passed",
   "browser_deletion": "sibling_preserves_parent_last_child_deletes_parent_passed",
   "live_telegram_messages_sent_this_build": 0,
-  "live_credentials_used_this_build": true,
+  "live_credentials_used_this_build": false,
   "real_personal_data_import": "not_performed",
   "cloudflare_worker_and_d1": "unchanged",
   "chatplace_original_automations": "unchanged",
   "test_1_test_2_in_new_bot": "absent",
   "windows_installation": "manual_apply_update_then_restart_required",
-  "ci_result": "pending_for_version_1.7.0",
+  "ci_result": "pending_for_version_1.8.0",
   "requirements": [
     "Windows Node.js 24.13+",
     "Existing private configuration",
@@ -62,8 +62,18 @@
   "contact_channel": "MathUP_Course_Gallaorol",
   "contact_group": "MathUP_Gallaorol",
   "bot_start_intro": "implemented_and_synthetic_tested",
-  "bot_public_profile": "applied_and_read_back_verified_default_and_uz",
-  "live_credentials_scope": "authorized_public_bot_description_update_only",
+  "bot_public_profile": "unchanged_from_authorized_1.7_update",
+  "live_credentials_scope": "none_for_this_build",
   "profile_update_sends_chat_messages": false,
-  "profile_update_changes_token_or_webhook": false
+  "profile_update_changes_token_or_webhook": false,
+  "practice_sections": [
+    "tests",
+    "answers"
+  ],
+  "practice_content": "empty_awaiting_owner_topic_images_and_answer_keys",
+  "practice_questions_per_topic": 10,
+  "practice_format": "one_image_per_ten_question_set",
+  "practice_automatic_scoring": false,
+  "practice_registration_required": false,
+  "practice_preserves_unfinished_registration": true
 }

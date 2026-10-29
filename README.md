@@ -228,3 +228,11 @@ Botning asosiy menyusida Bog'lanish tugmasi bor. Unda Tel: +998 88 729 66 67, Te
 /start va /help matni bot nimalar qila olishini tushuntiradi: ota-ona va farzandni ro'yxatga olish, farzandlarning o'qish holatini ko'rish, markaz xabarlarini olish va bog'lanish. TEST 1/TEST 2 funksiyalari reklama qilinmaydi.
 
 Telegram'ning START bosilishidan oldingi tavsifi va profilning qisqa tavsifini alohida sozlash uchun o'rnatilgan loyiha papkasida node scripts/configure-bot-profile.mjs --apply bajariladi. Faqat ko'rish uchun --apply ni yozmang. Skript tokenni Windows DPAPI'dan xotiraga oladi, bot nomini tekshiradi, avvalgi ommaviy profil matnini backups/ ga saqlaydi, standart va o'zbekcha tavsifni o'rnatib qayta tekshiradi. Xabar yubormaydi, token yoki webhook'ni o'zgartirmaydi. Profil matni har bir server ishga tushishida avtomatik almashtirilmaydi.
+
+### 1.8.0 - Testlar va Test javoblari bo'limlari
+
+Botning asosiy klaviaturasiga Testlar va Test javoblari bo'limlari qo'shildi. /tests va /answers buyruqlari ham ishlaydi. Har bo'limdan ikkinchisiga va Bosh menyuga o'tish mumkin. Tugmalar yangi va ro'yxatdan o'tgan ota-onalarda ko'rinadi. Ro'yxatdan o'tish shakli tugamagan bo'lsa, bu bo'limlarni ochish uni o'chirmaydi.
+
+Hozir faqat bo'limlar va ularning tushuntirishlari tayyor. Har mavzu uchun 10 ta savoldan iborat bitta test rasmi va unga mos javoblarni loyiha egasi keyin yuboradi. Hozircha rasm, uydirma savol yoki javob kaliti joylashtirilmagan; avtomatik ball hisoblash qo'shilmagan. Bo'limlar materiallar hali yuklanmaganini aniq bildiradi. Mavzular ro'yxati va rasmli materiallar keyingi bosqichda berilgan kontent asosida joylanadi.
+
+O'rnatish: serverni to'xtating, Apply-Update.ps1 -Target ishchi-papka orqali kodni yangilang, Start.ps1 -Bot ni ishga tushiring va botda /start yuboring. Yangi baza migratsiyasi yoki token o'zgarishi talab qilinmaydi. ChatPlace'dagi avvalgi TEST 1/TEST 2 avtomatizatsiyalari o'zgartirilmaydi.
