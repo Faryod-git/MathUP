@@ -53,12 +53,26 @@ export async function flushOutbox(DB,api,signal) {
   }
   return 0;
 }
-export async function runPolling(DB,config,{api=telegramApi(config.botToken),signal,onStatus=()=>{}}={}) {
-  await checkBotReady(config,api);
+export async function runPolling(DB,config,{api=telegramApi(config.botToken),signal,onStatus=()=>{},sleep=(ms,signal)=>delay(ms,undefined,{signal}).catch(()=>{})}={}) {
+  const wait=ms=>sleep(ms,signal);
+  let startupBackoff=1000,ready=false;
+  while(!signal?.aborted) {
+    try {await checkBotReady(config,api);ready=true;break;}
+    catch(e) {
+      // Read-only preflight can safely retry transient transport/server failures.
+      // Configuration, bot identity, active webhook and authentication errors stay terminal.
+      const transient=e.uncertain||e.code===429||(e.code>=500&&e.code<=599);
+      if(!transient)throw e;
+      if(signal?.aborted)break;
+      onStatus({mode:'reconnecting'});
+      const retry=e.code===429&&e.retryAfter>0&&e.retryAfter<=3600?e.retryAfter*1000:startupBackoff;
+      await wait(retry);startupBackoff=Math.min(startupBackoff*2,30000);
+    }
+  }
+  if(!ready){onStatus({mode:'off'});return;}
   DB.sqlite.prepare("UPDATE bot_outbox SET state='unknown',body_json=NULL WHERE state='sending'").run();
   recoverBroadcasts(DB);
   const process=createBotEngine(DB,config);let backoff=1000;
-  const wait=ms=>delay(ms,undefined,{signal}).catch(()=>{});
   const flush=async()=>{const retry=await flushOutbox(DB,api,signal)||await flushBroadcasts(DB,api,signal);if(retry)await wait(retry*1000);return retry;};
   onStatus({mode:'polling'});
   while(!signal?.aborted) {

@@ -260,3 +260,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "F:\MathUP-main\Start.ps
 Botda /start yuborib, Testlar -> Y_I_E 1-qism testlari tugmalarini oching. Yangilovchi eski kod va almashtiriladigan materiallarni backups/code-* papkasiga saqlaydi. config.json, secrets.dpapi va data bazasi ko'chirilmaydi. Faqat kodli GitHub arxivida materiallar bo'lmaydi; u mavjud mahalliy materiallarni o'chirmaydi. Yangi materiallarni ko'rish uchun server qayta ishga tushishi kerak.
 
 Sinovlar sun'iy katalog va 1x1 PNG ishlatadi; haqiqiy ota-onalarga xabar yuborilmaydi. Windows CI yangilovchining hash/path tekshiruvi, yangi fayllar, rollback va shaxsiy sozlamalar saqlanishini ham tekshiradi. Mahalliy o'rnatish va haqiqiy botda mavzuni ochish foydalanuvchi kompyuterida tekshiriladi.
+
+
+### 1.10.1 - Telegram ulanishini ishga tushishda qayta sinash
+
+Telegram dastur ochilgan paytda vaqtincha ulanmasa, bot tekshiruvi 1, 2, 4 soniya va keyin ko'pi bilan 30 soniyalik tanaffus bilan qayta bajariladi. Internet tiklangach serverni qayta ochmasdan polling boshlanadi. 429 javobidagi kutish vaqti hisobga olinadi. Noto'g'ri token, boshqa bot nomi yoki faol webhook qayta urinilmaydi va avvalgidek aniq blok bo'lib qoladi. Qayta urinish faqat o'qish uchun getMe/getWebhookInfo tekshiruvlariga tegishli; yetkazilgani noma'lum xabarlar qayta yuborilmaydi. Bu o'zgarish tarmoqdagi tashqi to'siqni yoki VPN/proxy sozlamalarini avtomatik o'zgartirmaydi.

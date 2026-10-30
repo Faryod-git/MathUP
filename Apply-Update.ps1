@@ -52,5 +52,5 @@ try {
   }
   throw
 }
-Write-Output 'MathUP 1.10 code and supplied private course content updated. Config, credentials and database were not copied or changed.'
+Write-Output 'MathUP 1.10.1 code and supplied private course content updated. Config, credentials and database were not copied or changed.'
 Write-Output 'Restart the existing server with Ctrl+C, then Start.ps1 -Bot. Refresh browser with Ctrl+F5.'

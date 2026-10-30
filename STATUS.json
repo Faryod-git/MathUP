@@ -1,5 +1,5 @@
 {
-  "version": "1.10.0",
+  "version": "1.10.1",
   "student_deletion": "physical_version_checked_transaction",
   "last_child_deletes_parent": true,
   "siblings_preserve_parent": true,
@@ -21,7 +21,7 @@
   "broadcast_unknown_delivery_retry": false,
   "broadcast_text_retention": "only_until_queue_completion",
   "local_delivery_requires_legacy_consent": false,
-  "synthetic_checks_expected_linux": 162,
+  "synthetic_checks_expected_linux": 166,
   "browser_desktop": "passed_1440px",
   "browser_mobile": "passed_390px_no_page_overflow",
   "browser_broadcast": "cancel_confirmation_queue_3_mock_deliveries_passed",
@@ -33,7 +33,7 @@
   "chatplace_original_automations": "unchanged",
   "test_1_test_2_in_new_bot": "absent",
   "windows_installation": "manual_apply_update_then_restart_required",
-  "ci_result": "pending_for_version_1.10.0",
+  "ci_result": "not_run_for_1.10.1",
   "requirements": [
     "Windows Node.js 24.13+",
     "Existing private configuration",
@@ -81,10 +81,12 @@
     "Y_I_E 3-qism"
   ],
   "practice_book_navigation": "ordered_topics_pagination_previous_next_same_topic_answers",
-  "synthetic_checks_passed_linux": 162,
-  "synthetic_checks_expected_windows": 163,
+  "synthetic_checks_expected_windows": 167,
   "practice_delivery": "local_integrity_checked_png_multipart_upload_on_request",
   "practice_public_content_upload": false,
   "practice_live_verification": "not_performed",
-  "windows_updater_current_build": "pending_windows_ci"
+  "windows_updater_current_build": "passed_local_windows_synthetic_test",
+  "startup_preflight": "retry_transient_network_and_server_errors_with_backoff_until_connection_returns",
+  "startup_permanent_blocks": "configuration_identity_active_webhook_auth_no_retry",
+  "synthetic_checks_passed_windows": 167
 }

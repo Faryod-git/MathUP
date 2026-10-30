@@ -174,6 +174,26 @@ try {
   await test('Telegram adapter rejects dangerous methods and sanitizes credential-bearing errors',async()=>{
     const api=telegramApi('SYNTHETIC_SECRET',async()=>{throw Error('https://api.telegram.org/botSYNTHETIC_SECRET/getMe');});await assert.rejects(()=>api('deleteWebhook'),/ruxsat etilmagan/);await assert.rejects(()=>api('getMe'),e=>!e.message.includes('SYNTHETIC_SECRET')&&e.uncertain);
   });
+  await test('Startup network failures retry read-only preflight then enter polling without real sends',async()=>{
+    const db=openDatabase(),abort=new AbortController(),waits=[],states=[],methods=[];let attempts=0;
+    const api=async method=>{methods.push(method);if(method==='getMe'){if(attempts++<2)throw Object.assign(Error('synthetic offline'),{uncertain:true});return {is_bot:true,username:config.botUsername};}if(method==='getWebhookInfo')return {url:''};if(method==='getUpdates'){abort.abort();return [];}throw Error('No sends expected');};
+    try{await runPolling(db,{...config,botToken:'synthetic'},{api,signal:abort.signal,sleep:async ms=>{waits.push(ms);},onStatus:s=>states.push(s.mode)});assert.deepEqual(waits,[1000,2000]);assert.deepEqual(methods,['getMe','getMe','getMe','getWebhookInfo','getUpdates']);assert.ok(states.includes('reconnecting'));assert.ok(states.includes('polling'));assert.equal(states.at(-1),'off');assert.equal(db.sqlite.prepare('SELECT COUNT(*) n FROM bot_updates').get().n,0);}finally{db.close();}
+  });
+  await test('Stopping during offline startup prevents polling and releases the retry loop',async()=>{
+    const db=openDatabase(),abort=new AbortController(),states=[];let calls=0;
+    try{await runPolling(db,{...config,botToken:'synthetic'},{api:async method=>{calls++;assert.equal(method,'getMe');throw Object.assign(Error('synthetic offline'),{uncertain:true});},signal:abort.signal,sleep:async()=>{abort.abort();},onStatus:s=>states.push(s.mode)});assert.equal(calls,1);assert.equal(states.at(-1),'off');}finally{db.close();}
+  });
+  await test('Startup authentication, identity and webhook blocks are terminal and never retry or send',async()=>{
+    for(const kind of ['auth','identity','webhook']){const db=openDatabase();let waits=0;
+      const api=async method=>{if(kind==='auth')throw Object.assign(Error('synthetic auth rejected'),{rejected:true,code:401});if(method==='getMe')return {is_bot:true,username:kind==='identity'?'WrongSyntheticBot':config.botUsername};if(method==='getWebhookInfo')return {url:'https://synthetic.invalid/webhook'};throw Error('No polling expected');};
+      try{await assert.rejects(()=>runPolling(db,{...config,botToken:'synthetic'},{api,sleep:async()=>{waits++;}}));assert.equal(waits,0);}finally{db.close();}
+    }
+  });
+  await test('Startup transient server and rate-limit failures respect Telegram retry delay',async()=>{
+    const db=openDatabase(),abort=new AbortController(),waits=[];let attempts=0;
+    const api=async method=>{if(method==='getMe'){if(attempts++===0)throw Object.assign(Error('synthetic server error'),{rejected:true,code:503});if(attempts===2)throw Object.assign(Error('synthetic rate limit'),{rejected:true,code:429,retryAfter:7});return {is_bot:true,username:config.botUsername};}if(method==='getWebhookInfo')return {url:''};if(method==='getUpdates'){abort.abort();return [];}throw Error('No sends expected');};
+    try{await runPolling(db,{...config,botToken:'synthetic'},{api,signal:abort.signal,sleep:async ms=>{waits.push(ms);}});assert.deepEqual(waits,[1000,7000]);}finally{db.close();}
+  });
   await test('Polling saves offset and processes duplicate updates only once',async()=>{
     const db=openDatabase(),abort=new AbortController();let polls=0;
     const update={update_id:888,message:{chat:{type:'private',id:910000000001},from:{id:910000000001},text:'/start'}};
